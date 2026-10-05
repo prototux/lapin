@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Satellite</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <div>
+      <div class="title" id="dev-name">Satellite</div>
+      <div class="sub" id="dev-room">—</div>
+    </div>
+  </div>
+  <div class="pills">
+    <span class="pill" id="pill-state">idle</span>
+    <span class="pill" id="pill-link">offline</span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="on">Overview</button>
+  <button data-tab="audio">Audio</button>
+  <button data-tab="wakeword">Wake word</button>
+  <button data-tab="plugins">Plugins</button>
+  <button data-tab="device">Device</button>
+  <button data-tab="system">System</button>
+</nav>
+
+<main>
+<!-- ============================================================ Overview -->
+<section id="tab-overview" class="tab on">
+  <div class="grid two">
+    <div class="card">
+      <h2>Control</h2>
+      <div class="row controls">
+        <button class="primary" id="btn-talk">Talk</button>
+        <button id="btn-stop">Stop</button>
+        <button class="toggle" id="btn-mute" aria-pressed="false">Mic on</button>
+      </div>
+      <label class="field">
+        <span>Volume <b id="vol-val">60</b></span>
+        <input type="range" id="vol" min="0" max="100" step="1">
+      </label>
+      <div class="kv">
+        <div><span>Heard</span><b id="last-transcript">—</b></div>
+        <div><span>Answer</span><b id="last-reply">—</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Sound field</h2>
+      <div class="compass-wrap">
+        <canvas id="compass" width="340" height="340" aria-label="Direction of arrival"></canvas>
+        <div class="legend">
+          <span><i class="sw srp"></i>SRP-PHAT</span>
+          <span><i class="sw trk"></i>speaker track</span>
+          <span><i class="sw stat"></i>static noise</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="grid three">
+    <div class="card">
+      <h2>Microphones</h2>
+      <div id="mic-bars" class="bars"></div>
+    </div>
+    <div class="card">
+      <h2>Speech</h2>
+      <div class="stats" id="speech-stats"></div>
+    </div>
+    <div class="card">
+      <h2>Wake word</h2>
+      <div id="kws-bars" class="bars"></div>
+      <p class="hint">Match cost per beam; it fires below the line.</p>
+    </div>
+  </div>
+  <div class="grid two">
+    <div class="card">
+      <h2>Engine load</h2>
+      <div class="stats" id="cpu-stats"></div>
+    </div>
+    <div class="card">
+      <h2>Activity</h2>
+      <ol id="events" class="events"></ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ Audio -->
+<section id="tab-audio" class="tab">
+  <div class="grid two" id="audio-forms"></div>
+  <div class="card">
+    <h2>Tools</h2>
+    <div class="row">
+      <button id="btn-monitor">Listen to the beam</button>
+      <button id="btn-reset-noise">Relearn the noise</button>
+      <button data-earcon="wake">Test earcon</button>
+      <button data-earcon="done">Test "done" chime</button>
+      <button data-earcon="alarm">Test alarm</button>
+    </div>
+    <p class="hint">"Listen" plays what the server would hear (beamformed, cleaned) in this browser.</p>
+  </div>
+</section>
+
+<!-- ============================================================ Wake word -->
+<section id="tab-wakeword" class="tab">
+  <div class="grid two">
+    <div class="card">
+      <h2>Enroll</h2>
+      <p class="hint">Record 3 to 5 samples of your wake word, from where you usually talk, at a normal voice. Say it right after the beep.</p>
+      <div class="row">
+        <input id="kw-name" placeholder="Wake word, e.g. hey lapin" autocomplete="off">
+        <button class="primary" id="btn-record">Record a sample</button>
+      </div>
+      <div id="record-status" class="record-status" aria-live="polite"></div>
+      <div id="kw-list"></div>
+    </div>
+    <div class="card">
+      <h2>Sensitivity</h2>
+      <label class="switch"><input type="checkbox" id="kw-auto"><span>Set the threshold from my samples</span></label>
+      <label class="field">
+        <span>Threshold <b id="kw-thr-val">0.42</b></span>
+        <input type="range" id="kw-thr" min="0.15" max="0.7" step="0.005">
+      </label>
+      <div class="live-cost">
+        <div class="meter big"><i id="kw-live"></i><em id="kw-line"></em></div>
+        <div class="hint">Live best match. Say your wake word: the bar should cross the line. Higher threshold = more sensitive.</div>
+      </div>
+      <div id="kw-forms"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ Plugins -->
+<section id="tab-plugins" class="tab">
+  <div class="card">
+    <h2>Installed plugins</h2>
+    <div id="plugin-list"></div>
+  </div>
+  <div id="plugin-panels"></div>
+</section>
+
+<!-- ============================================================ Device -->
+<section id="tab-device" class="tab">
+  <div class="grid two">
+    <div class="card">
+      <h2>Identity</h2>
+      <label class="field"><span>Name</span><input id="d-name"></label>
+      <label class="field"><span>Room</span><input id="d-room" placeholder="kitchen, bedroom…"></label>
+      <label class="field"><span>Server</span><input id="d-server" placeholder="ws://server:8765/v1/device (several: comma separated, tried in order)"></label>
+      <div class="row"><button class="primary" id="btn-save-device">Save</button><span id="d-saved" class="hint"></span></div>
+    </div>
+    <div class="card">
+      <h2>Connection</h2>
+      <div class="kv" id="link-kv"></div>
+      <div class="row">
+        <button id="btn-reconnect">Reconnect</button>
+        <button id="btn-new-token" class="danger">New device token</button>
+      </div>
+      <p class="hint">A new token means approving this device again on the server.</p>
+    </div>
+    <div class="card">
+      <h2>Local access</h2>
+      <label class="field"><span>Web UI password (empty: none)</span><input id="d-password" type="password" autocomplete="new-password"></label>
+      <label class="switch"><input type="checkbox" id="d-button"><span>User button (press: talk / stop, hold: mute)</span></label>
+      <div class="row"><button id="btn-save-access">Save</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ System -->
+<section id="tab-system" class="tab">
+  <div class="grid two">
+    <div class="card">
+      <h2>Board</h2>
+      <div class="kv" id="sys-kv"></div>
+      <div class="row">
+        <button id="btn-restart-engine">Restart engine</button>
+        <button id="btn-restart-agent">Restart agent</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Logs</h2>
+      <div class="row">
+        <select id="log-unit"><option value="satellite-agent">agent</option><option value="satellite-engine">engine</option></select>
+        <button id="btn-logs">Refresh</button>
+      </div>
+      <pre id="logs" class="logs"></pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<div id="toast" class="toast" role="status"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
