@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recognition_label">Reconnaissance Lapin</string>
+
+    <string name="state_idle">Touchez pour parler</string>
+    <string name="state_connecting">Connexion…</string>
+    <string name="state_pending">En attente d\'approbation</string>
+    <string name="state_listening">Je t\'écoute…</string>
+    <string name="state_thinking">Je réfléchis…</string>
+    <string name="state_speaking">Je réponds…</string>
+    <string name="state_error">Un problème est survenu</string>
+    <string name="state_done">C\'est fait</string>
+    <string name="hint_heard_nothing">Je n\'ai rien entendu.</string>
+    <string name="hint_cancelled">Annulé.</string>
+    <string name="hint_pending">Ce téléphone attend d\'être approuvé sur la page Appareils du serveur (%1$s).</string>
+    <string name="hint_cant_reach">Impossible de joindre le serveur %1$s.</string>
+    <string name="hint_connection_lost">Connexion au serveur perdue.</string>
+    <string name="hint_mic_permission">Micro non autorisé : ouvre l\'application Lapin pour l\'autoriser.</string>
+    <string name="hint_mic_unavailable">Le micro n\'est pas disponible.</string>
+    <string name="type_hint">Écris ta demande</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
+    <string name="cd_keyboard">Écrire plutôt</string>
+    <string name="cd_send">Envoyer</string>
+    <string name="cd_close">Fermer</string>
+    <string name="cd_orb">Parler</string>
+
+    <string name="setup_subtitle">Ton assistant maison, sur ce téléphone</string>
+    <string name="section_server">Serveur</string>
+    <string name="field_url">Adresse du serveur</string>
+    <string name="field_name">Nom de l\'appareil</string>
+    <string name="field_owner">Propriétaire</string>
+    <string name="owner_help">La personne de la maison à qui appartient ce téléphone (comme sur la page Personnes du serveur, ex. alice). Le lien est définitif dès le premier appairage.</string>
+    <string name="save_connect">Enregistrer et connecter</string>
+    <string name="status_disconnected">Non connecté</string>
+    <string name="status_connecting">Connexion…</string>
+    <string name="status_pending">En attente d\'approbation sur la page Appareils du serveur</string>
+    <string name="status_connected">Connecté à %1$s</string>
+    <string name="status_failed">Erreur : %1$s</string>
+    <string name="device_id_label">Identifiant : %1$s</string>
+    <string name="btn_test">Tester</string>
+    <string name="test_phrase">Quelle heure est-il ?</string>
+    <string name="btn_try">Essayer l\'assistant</string>
+    <string name="test_reply">Réponse : %1$s</string>
+    <string name="section_permissions">Autorisations</string>
+    <string name="perm_explain">Lapin a besoin du micro. Les autres autorisations lui permettent d\'agir quand tu le demandes : messages, appels, contacts, itinéraire depuis là où tu es.</string>
+    <string name="perm_mic">Micro</string>
+    <string name="perm_contacts">Contacts</string>
+    <string name="perm_sms">Envoi de SMS</string>
+    <string name="perm_phone">Appels</string>
+    <string name="perm_location">Position</string>
+    <string name="perm_dnd">Accès « Ne pas déranger »</string>
+    <string name="btn_grant">Autoriser</string>
+    <string name="btn_grant_all">Tout autoriser</string>
+    <string name="granted">Autorisé</string>
+    <string name="section_assistant">Assistant par défaut</string>
+    <string name="assistant_explain">Pour ouvrir Lapin avec la touche assistant, un appui long sur Accueil ou sur le bouton marche (selon le téléphone), choisis Lapin comme « Application d\'assistant numérique » dans les paramètres (Applications → Applications par défaut → Assistant numérique).</string>
+    <string name="btn_assistant_settings">Ouvrir les réglages de l\'assistant</string>
+    <string name="assistant_is_default">Lapin est l\'assistant par défaut.</string>
+    <string name="assistant_not_default">Lapin n\'est pas encore l\'assistant par défaut.</string>
+    <string name="section_more">Android Auto et TV</string>
+    <string name="more_explain">Android Auto : Lapin apparaît dans la liste des applis de la voiture (le bouton du volant reste à Google). Une appli installée à la main demande d\'activer « Sources inconnues » dans les paramètres développeur d\'Android Auto. Android TV : la même appli affiche un grand bouton pour parler.</string>
+
+    <string name="section_music">Musique</string>
+    <string name="music_explain">« Mets du Daft Punk » joue dans ta propre appli de musique sur le téléphone (ta bibliothèque Navidrome dans Tempus), sans passer par le serveur.</string>
+    <string name="music_app">Appli de musique</string>
+    <string name="music_auto">Automatique (%1$s)</string>
+    <string name="music_none">aucune trouvée</string>
+    <string name="perm_media">Accès aux notifications (facultatif)</string>
+    <string name="perm_media_explain">Facultatif : permet à Lapin de savoir ce que joue n\'importe quelle appli et de piloter celle qui joue vraiment. Lapin ne lit pas tes notifications.</string>
+
+    <string name="car_talk">Parler</string>
+    <string name="car_stop">Stop</string>
+    <string name="car_ready">Appuie sur Parler et demande.</string>
+    <string name="car_needs_api">Il faut une version plus récente d\'Android Auto (API car app niveau 5).</string>
+    <string name="car_needs_mic">Autorise le micro pour Lapin sur le téléphone.</string>
+    <string name="car_heard">Toi : %1$s</string>
+
+    <string name="tv_press">Appuie sur OK ou sur la touche recherche pour parler</string>
+</resources>

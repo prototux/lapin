@@ -1,0 +1,4 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/tv_banner_bg"/>
+    <item android:drawable="@drawable/ic_launcher_foreground" android:gravity="center" android:width="180dp" android:height="180dp"/>
+</layer-list>

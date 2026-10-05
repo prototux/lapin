@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Lapin</string>
+    <string name="recognition_label">Lapin speech</string>
+
+    <!-- assistant card -->
+    <string name="state_idle">Tap to talk</string>
+    <string name="state_connecting">Connecting…</string>
+    <string name="state_pending">Waiting for approval</string>
+    <string name="state_listening">Listening…</string>
+    <string name="state_thinking">Thinking…</string>
+    <string name="state_speaking">Speaking…</string>
+    <string name="state_error">Something went wrong</string>
+    <string name="state_done">Done</string>
+    <string name="hint_heard_nothing">I didn\'t hear anything.</string>
+    <string name="hint_cancelled">Cancelled.</string>
+    <string name="hint_pending">This phone is waiting for approval on the server\'s Devices page (%1$s).</string>
+    <string name="hint_cant_reach">Can\'t reach the server at %1$s.</string>
+    <string name="hint_connection_lost">Connection to the server lost.</string>
+    <string name="hint_mic_permission">Microphone permission missing: open the Lapin app to allow it.</string>
+    <string name="hint_mic_unavailable">The microphone is not available.</string>
+    <string name="type_hint">Type a request</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="cd_keyboard">Type instead</string>
+    <string name="cd_send">Send</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_orb">Talk</string>
+
+    <!-- setup -->
+    <string name="setup_subtitle">Your home assistant, on this phone</string>
+    <string name="section_server">Server</string>
+    <string name="field_url">Server address</string>
+    <string name="field_name">Device name</string>
+    <string name="field_owner">Owner</string>
+    <string name="owner_help">The household user this phone belongs to (as on the server\'s People page, e.g. alice). It is bound for good on the first pairing.</string>
+    <string name="save_connect">Save and connect</string>
+    <string name="status_disconnected">Not connected</string>
+    <string name="status_connecting">Connecting…</string>
+    <string name="status_pending">Waiting for approval on the server\'s Devices page</string>
+    <string name="status_connected">Connected to %1$s</string>
+    <string name="status_failed">Error: %1$s</string>
+    <string name="device_id_label">Device id: %1$s</string>
+    <string name="btn_test">Test</string>
+    <string name="test_phrase">What time is it?</string>
+    <string name="btn_try">Try the assistant</string>
+    <string name="test_reply">Answer: %1$s</string>
+    <string name="section_permissions">Permissions</string>
+    <string name="perm_explain">Lapin needs the microphone. The others let it act for you when you ask: messages, calls, contacts, navigation from where you are.</string>
+    <string name="perm_mic">Microphone</string>
+    <string name="perm_contacts">Contacts</string>
+    <string name="perm_sms">Send SMS</string>
+    <string name="perm_phone">Phone calls</string>
+    <string name="perm_location">Location</string>
+    <string name="perm_dnd">Do Not Disturb access</string>
+    <string name="btn_grant">Allow</string>
+    <string name="btn_grant_all">Allow all</string>
+    <string name="granted">Allowed</string>
+    <string name="section_assistant">Default assistant</string>
+    <string name="assistant_explain">To open Lapin with the assistant key, a long press on Home or on the power button (depending on the phone), choose Lapin as the “Digital assistant app” in the settings (Apps → Default apps → Digital assistant app).</string>
+    <string name="btn_assistant_settings">Open assistant settings</string>
+    <string name="assistant_is_default">Lapin is the default assistant.</string>
+    <string name="assistant_not_default">Lapin is not the default assistant yet.</string>
+    <string name="section_more">Android Auto and TV</string>
+    <string name="more_explain">Android Auto: Lapin appears in the car\'s app list (the steering wheel button stays with Google). A sideloaded app needs Android Auto\'s developer settings → “Unknown sources”. Android TV: the same app shows a big talk button.</string>
+
+    <string name="section_music">Music</string>
+    <string name="music_explain">“Play Daft Punk” plays in your own music app on the phone (your Navidrome library in Tempus), not streamed by the server.</string>
+    <string name="music_app">Music app</string>
+    <string name="music_auto">Automatic (%1$s)</string>
+    <string name="music_none">none found</string>
+    <string name="perm_media">Notification access (optional)</string>
+    <string name="perm_media_explain">Optional: lets Lapin see what any app is playing and control the app actually playing. Lapin doesn\'t read your notifications.</string>
+
+    <!-- car -->
+    <string name="car_talk">Talk</string>
+    <string name="car_stop">Stop</string>
+    <string name="car_ready">Press Talk and ask.</string>
+    <string name="car_needs_api">This needs a more recent Android Auto (car app API level 5).</string>
+    <string name="car_needs_mic">Allow the microphone for Lapin on the phone.</string>
+    <string name="car_heard">You: %1$s</string>
+
+    <!-- tv -->
+    <string name="tv_press">Press OK or the search key to talk</string>
+</resources>
