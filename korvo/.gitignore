@@ -1,0 +1,13 @@
+build/
+managed_components/
+sdkconfig.old
+.venv-flash/
+test/.venv/
+test/hostsat
+test/test_kws
+test/test_mixer
+test/test_proto
+test/ref_trace
+boot-check-*.log
+test/test_ota
+test/test_logbuf

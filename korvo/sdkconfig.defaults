@@ -1,0 +1,87 @@
+# ESP32-Korvo V1.1: ESP32-WROVER-E (ESP32-D0WD-V3, 16 MB flash, 8 MB PSRAM).
+# Built for a 4 MB layout so it runs on any module with 4 MB or more.
+CONFIG_IDF_TARGET="esp32"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+# DIO works with every module (QIO would be ~2x faster on cache misses, but
+# DIO is what the QEMU boot test can check, and it is not the bottleneck)
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_OFFSET=0x8000
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
+# PSRAM
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_SPEED_80M=y
+# no PSRAM: boot anyway, degraded (small buffers, no earcons)
+CONFIG_SPIRAM_IGNORE_NOTFOUND=y
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=4096
+CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=49152
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y
+# stacks of the tasks that never write flash go to PSRAM (task_create_psram)
+CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM=y
+# ESP32-WROVER-E = ESP32-D0WD-V3 (chip revision 3): the PSRAM cache bug of
+# revisions 0/1 does not exist, so the compiler workaround (a memory barrier
+# after stores, in all code) is dropped. On an older chip esp_ota_end rejects
+# this image (chip revision check) and the device keeps its firmware.
+CONFIG_ESP32_REV_MIN_3=y
+
+# FreeRTOS: 1 kHz tick, run time stats for the CPU load in telemetry
+CONFIG_FREERTOS_HZ=1000
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32=y
+
+# watchdog: reboot if a task hangs
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
+CONFIG_ESP_TASK_WDT_PANIC=y
+CONFIG_ESP_INT_WDT=y
+CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT=y
+# brownout: lowest threshold (a USB-powered board with the amplifier on sags);
+# the reset reason is reported to the server at the next boot
+CONFIG_ESP_BROWNOUT_DET=y
+CONFIG_ESP_BROWNOUT_DET_LVL_SEL_0=y
+
+# updates over the WebSocket, with rollback: a new image must reach the server
+# (welcome) before it is marked valid, else the bootloader returns to the old one
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# crash summary saved to flash, reported at the next boot
+CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
+CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF=y
+CONFIG_ESP_COREDUMP_CHECKSUM_CRC32=y
+
+# Wi-Fi / lwIP sized for audio streaming
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=10
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=32
+CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM=32
+CONFIG_ESP_WIFI_AMPDU_TX_ENABLED=y
+CONFIG_ESP_WIFI_AMPDU_RX_ENABLED=y
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=16384
+# 16 KB of receive window is plenty on a LAN (~3 MB/s at 5 ms RTT) and bounds
+# the pbufs held in internal RAM during the template download / music
+CONFIG_LWIP_TCP_WND_DEFAULT=16384
+CONFIG_LWIP_TCP_RECVMBOX_SIZE=16
+# lwIP with Wi-Fi on core 0: core 1 is the audio core (AFE, speaker)
+CONFIG_LWIP_TCPIP_TASK_AFFINITY_CPU0=y
+CONFIG_LWIP_MAX_SOCKETS=12
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+
+# ESP-SR: no WakeNet / MultiNet models (the wake word is our own detector)
+CONFIG_SR_NSN_WEBRTC=y
+CONFIG_SR_VADN_WEBRTC=y
+
+# HTTP server for the Wi-Fi setup page
+CONFIG_HTTPD_MAX_REQ_HDR_LEN=1024
+CONFIG_HTTPD_MAX_URI_LEN=512
+
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+# plain text logs (captured and sent to the server, parsed by flash.py)
+CONFIG_LOG_COLORS=n
+CONFIG_APP_PROJECT_VER_FROM_CONFIG=y
+CONFIG_APP_PROJECT_VER="1.2.0"

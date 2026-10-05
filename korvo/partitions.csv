@@ -1,0 +1,16 @@
+# Fits any ESP32 module with 4 MB of flash or more (ESP32-Korvo V1.1: 16 MB WROVER-E).
+# Name,   Type, SubType,  Offset,   Size,     Flags
+# nvs: Wi-Fi driver data, device identity (device_id, token), runtime state.
+#      Never written by flash.py, so reflashing keeps the pairing.
+nvs,      data, nvs,      0x9000,   0x6000,
+otadata,  data, ota,      0xf000,   0x2000,
+phy_init, data, phy,      0x11000,  0x1000,
+# two app slots for updates over the WebSocket (the app is ~1.3 MB)
+ota_0,    app,  ota_0,    0x20000,  0x1a0000,
+ota_1,    app,  ota_1,    0x1c0000, 0x1a0000,
+# cfg: user settings (Wi-Fi, server URL, name, room), written by flash.py
+cfg,      data, nvs,      0x360000, 0x6000,
+# coredump: the last crash, reported to the server at the next boot
+coredump, data, coredump, 0x370000, 0x20000,
+# storage: LittleFS, wake word template features (works offline)
+storage,  data, spiffs,   0x390000, 0x70000,
