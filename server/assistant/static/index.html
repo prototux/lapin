@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<aside class="side" id="side">
+  <div class="brand"><span class="logo" aria-hidden="true"></span><div><b id="srv-name">Assistant</b><small id="srv-sub">server</small></div></div>
+  <nav id="nav">
+    <a data-page="dashboard" class="on">Dashboard</a>
+    <a data-page="devices">Devices <span class="badge" id="pending-badge" hidden></span></a>
+    <a data-page="conversations">Conversations</a>
+    <a data-page="talk">Talk &amp; chat</a>
+    <a data-page="timers">Timers</a>
+    <a data-page="media">Media</a>
+    <a data-page="people">People &amp; memory</a>
+    <a data-page="skills">Skills</a>
+    <a data-page="integrations">Integrations <span class="badge" id="unknown-badge" hidden></span></a>
+    <a data-page="settings">Settings</a>
+    <a data-page="logs">Logs</a>
+  </nav>
+</aside>
+<button class="menu" id="menu" aria-label="Menu">☰</button>
+
+<main>
+<!-- ===================================================== Dashboard -->
+<section id="p-dashboard" class="page on">
+  <h1>Dashboard</h1>
+  <div class="grid four" id="health"></div>
+  <div class="grid two">
+    <div class="card"><h2>Satellites</h2><div id="dash-devices" class="dev-cards"></div></div>
+    <div class="card"><h2>Live activity</h2><ol class="feed" id="feed"></ol></div>
+  </div>
+  <div class="grid two">
+    <div class="card"><h2>Recent turns</h2><div id="dash-turns"></div></div>
+    <div class="card"><h2>Now</h2><div class="kv" id="dash-now"></div></div>
+  </div>
+</section>
+
+<!-- ===================================================== Devices -->
+<section id="p-devices" class="page">
+  <h1>Devices</h1>
+  <div id="pending"></div>
+  <div id="device-list" class="grid two"></div>
+  <p class="hint">Satellites connect to <code id="gw-url"></code>. A new one appears here and waits for approval.</p>
+</section>
+
+<!-- ===================================================== Conversations -->
+<section id="p-conversations" class="page">
+  <h1>Conversations</h1>
+  <div class="split">
+    <div class="card list-card"><div id="turn-list" class="turn-list"></div><button id="more-turns">Older</button></div>
+    <div class="card" id="turn-detail"><p class="hint">Pick a turn to see its timeline: wake, verification, end of speech, recognition, the model, tools, speech.</p></div>
+  </div>
+</section>
+
+<!-- ===================================================== Talk -->
+<section id="p-talk" class="page">
+  <h1>Talk &amp; chat</h1>
+  <div class="grid two">
+    <div class="card">
+      <h2>Voice (this browser as a satellite)</h2>
+      <div class="ptt-wrap">
+        <button class="ptt" id="ptt" aria-label="Talk"><span></span></button>
+        <div><b id="ptt-state">Tap to talk</b><p class="hint" id="ptt-hint">Uses this browser's microphone and speakers, through the same protocol as the satellites.</p></div>
+      </div>
+      <div class="kv" id="ptt-kv"><div><span>Heard</span><b id="ptt-heard">—</b></div><div><span>Answer</span><b id="ptt-reply">—</b></div></div>
+    </div>
+    <div class="card chat-card">
+      <h2>Chat <button class="small" id="chat-reset">New conversation</button></h2>
+      <div class="chat" id="chat"></div>
+      <form class="chat-form" id="chat-form"><input id="chat-input" placeholder="Ask anything…" autocomplete="off"><button class="primary">Send</button></form>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== Timers -->
+<section id="p-timers" class="page">
+  <h1>Timers, alarms &amp; reminders</h1>
+  <div class="card"><div id="timer-list"></div></div>
+  <div class="card">
+    <h2>New timer</h2>
+    <form class="row" id="timer-form">
+      <input id="t-label" placeholder="Label (optional)">
+      <input id="t-min" type="number" min="1" value="5" style="width:90px"> <span>minutes on</span>
+      <select id="t-dev"></select>
+      <button class="primary">Start</button>
+    </form>
+  </div>
+</section>
+
+<!-- ===================================================== Media -->
+<section id="p-media" class="page">
+  <h1>Media</h1>
+  <div class="grid two">
+    <div class="card"><h2>Play</h2>
+      <label class="field"><span>Station</span><select id="m-station"></select></label>
+      <div id="m-devices" class="checks"></div>
+      <div class="row"><button class="primary" id="m-play">Play</button><button id="m-stop">Stop</button></div>
+      <p class="hint">Several satellites play in sync. They duck the music while the assistant listens or talks. Edit stations in Settings.</p>
+    </div>
+    <div class="card"><h2>Now playing</h2><div class="kv" id="m-now"></div></div>
+  </div>
+</section>
+
+<!-- ===================================================== People -->
+<section id="p-people" class="page">
+  <h1>People &amp; memory</h1>
+  <div class="grid two">
+    <div class="card"><h2>Users</h2><div id="users"></div>
+      <form class="row" id="user-form"><input id="u-name" placeholder="name"><select id="u-role"><option>adult</option><option>child</option><option>guest</option><option>admin</option></select><button>Add</button></form>
+      <p class="hint">Roles limit tools: children can't use risky actions or delete memories; guests can't save memories. Voice turns use the user set on each satellite (no speaker recognition yet).</p>
+    </div>
+    <div class="card" id="accounts-card"><h2>Accounts <select id="acct-user" style="font-weight:500;text-transform:none;letter-spacing:0"></select></h2>
+      <div id="accounts"></div>
+      <p class="hint">Each person's own Jellyfin and Navidrome accounts (their playlists, what they've watched). When a satellite's user has none, the household's accounts are used. Messaging apps are linked on the Integrations page.</p>
+    </div>
+  </div>
+  <div class="card"><h2>Memory</h2><div id="facts"></div>
+    <form class="row" id="fact-form"><input id="fact-text" placeholder="A fact to remember, e.g. Anna is allergic to peanuts"><button>Add</button></form>
+  </div>
+</section>
+
+<!-- ===================================================== Skills -->
+<section id="p-skills" class="page">
+  <h1>Skills</h1>
+  <div id="skill-list" class="grid two"></div>
+</section>
+
+<!-- ===================================================== Integrations -->
+<section id="p-integrations" class="page">
+  <h1>Integrations</h1>
+  <p class="hint" style="margin:-10px 0 16px">Messaging channels are optional: a disabled channel does not run at all. Smart home and music services are configured in Settings and on the People page.</p>
+  <div id="channel-list" class="grid two"></div>
+</section>
+
+<!-- ===================================================== Settings -->
+<section id="p-settings" class="page">
+  <h1>Settings</h1>
+  <div id="settings-forms" class="grid two"></div>
+  <div class="save-bar"><span id="settings-status" class="hint"></span><button class="primary" id="settings-save">Save settings</button></div>
+</section>
+
+<!-- ===================================================== Logs -->
+<section id="p-logs" class="page">
+  <h1>Logs</h1>
+  <div class="card"><pre id="logs" class="logs"></pre></div>
+</section>
+</main>
+<div id="toast" class="toast" role="status"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
