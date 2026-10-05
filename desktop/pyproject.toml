@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lapin-desktop"
+version = "1.0.0"
+description = "Lapin voice assistant for the desktop: hotkey overlay, client of the assistant server"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6-Essentials>=6.6",      # QtWidgets, QtNetwork (single instance), QtDBus (MPRIS)
+    "numpy>=1.24",
+    "sounddevice>=0.4.6",
+    "websockets>=13",
+    "pynput>=1.7.6",                # global hotkey on X11, Windows and macOS (unused on Wayland)
+]
+
+[project.scripts]
+lapin-desktop = "lapin_desktop.__main__:main"
+
+[project.gui-scripts]
+lapin-desktop-gui = "lapin_desktop.__main__:main"   # no console window on Windows
+
+[tool.setuptools.packages.find]
+include = ["lapin_desktop*"]

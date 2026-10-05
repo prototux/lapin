@@ -1,0 +1,16 @@
+#!/bin/sh
+# Runs Lapin from wherever this folder is: the first run creates .venv here
+# with the dependencies; the app itself runs from this folder's sources.
+set -e
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+VENV="$DIR/.venv"
+if [ ! -x "$VENV/bin/python" ] || [ "$DIR/requirements.txt" -nt "$VENV/.deps-ok" ]; then
+    PY=${PYTHON:-python3}
+    [ -x "$VENV/bin/python" ] || "$PY" -m venv "$VENV"
+    "$VENV/bin/python" -m pip install -q --upgrade pip
+    "$VENV/bin/python" -m pip install -q -r "$DIR/requirements.txt"
+    touch "$VENV/.deps-ok"
+fi
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+export LAPIN_LAUNCHER="$DIR/lapin"
+exec "$VENV/bin/python" -m lapin_desktop "$@"

@@ -1,0 +1,7 @@
+# What the launchers (./lapin, lapin.cmd) install into .venv next to them.
+# Keep in step with pyproject.toml.
+PySide6-Essentials>=6.6
+numpy>=1.24
+sounddevice>=0.4.6
+websockets>=13
+pynput>=1.7.6
