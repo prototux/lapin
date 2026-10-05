@@ -1,0 +1,17 @@
+[Unit]
+Description=Voice satellite agent (server link, LEDs, web UI)
+After=network-online.target satellite-engine.service
+Wants=network-online.target satellite-engine.service
+
+[Service]
+User=respeaker
+StateDirectory=satellite
+Environment=PYTHONPATH=/opt/satellite/agent
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -m satagent --data-dir /var/lib/satellite
+Restart=always
+RestartSec=3
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target

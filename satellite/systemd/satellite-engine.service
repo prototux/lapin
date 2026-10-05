@@ -1,0 +1,20 @@
+[Unit]
+Description=Voice satellite audio engine (satd)
+After=sound.target
+Wants=sound.target
+
+[Service]
+User=respeaker
+Group=audio
+RuntimeDirectory=satellite
+RuntimeDirectoryMode=0775
+RuntimeDirectoryPreserve=yes
+ExecStart=/opt/satellite/bin/satd -s /run/satellite/engine.sock
+Restart=always
+RestartSec=2
+LimitRTPRIO=70
+LimitMEMLOCK=64M
+Nice=-10
+
+[Install]
+WantedBy=multi-user.target
