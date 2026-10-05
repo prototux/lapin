@@ -1,0 +1,56 @@
+# ---- Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.venv-flash/
+*.egg-info/
+.pytest_cache/
+
+# ---- Server runtime data: settings (API tokens, accounts), the database,
+#      voice recordings, logs. Never commit it.
+server/data/
+
+# ---- ReSpeaker engine (C) build outputs
+*.o
+satellite/engine/satd
+satellite/engine/tests/kwstest
+satellite/engine/tests/kwsscan
+
+# ---- ESP32-Korvo (ESP-IDF): generated config, downloaded components, builds
+korvo/build/
+korvo/managed_components/
+korvo/sdkconfig
+korvo/sdkconfig.old
+korvo/dist/
+korvo/boot-check-*.log
+korvo/test/esp32_*/build/
+korvo/test/esp32_*/managed_components/
+korvo/test/esp32_*/sdkconfig
+korvo/test/esp32_*/sdkconfig.old
+korvo/test/test_kws
+korvo/test/test_mixer
+korvo/test/test_proto
+korvo/test/test_logbuf
+korvo/test/test_ota
+korvo/test/hostsat
+korvo/test/ref_trace
+
+# ---- Android
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+*.apk
+*.aab
+*.iml
+.idea/
+
+# ---- Editors and OS
+.vscode/
+.DS_Store
+*.swp
+*~
+*.log
