@@ -14,6 +14,10 @@ log = logging.getLogger("tools")
 IS_WIN = sys.platform.startswith("win")
 IS_MAC = sys.platform == "darwin"
 IS_LINUX = not IS_WIN and not IS_MAC
+# In the Flatpak the commands, apps and folders the tools act on are the
+# host's: commands run through `flatpak-spawn --host` (the manifest grants
+# org.freedesktop.Flatpak), the host's /usr is under /run/host (host-os:ro).
+IN_FLATPAK = IS_LINUX and os.path.exists("/.flatpak-info")
 
 
 def dry_run():
@@ -21,12 +25,33 @@ def dry_run():
     return os.environ.get("LAPIN_DRY_RUN", "") not in ("", "0")
 
 
+_host_which = {}
+
+
 def which(*names):
     for n in names:
-        p = shutil.which(n)
+        p = _flatpak_which(n) if IN_FLATPAK else shutil.which(n)
         if p:
             return p
     return None
+
+
+def _flatpak_which(name):
+    if name not in _host_which:
+        try:
+            p = subprocess.run(["flatpak-spawn", "--host", "sh", "-c", 'command -v "$1"', "sh", name],
+                               capture_output=True, text=True, timeout=5)
+            _host_which[name] = p.stdout.strip() if p.returncode == 0 and p.stdout.strip() else None
+        except (OSError, subprocess.TimeoutExpired):
+            _host_which[name] = None
+    return _host_which[name]
+
+
+def host(cmd):
+    """The command to run a program of the computer (the host in the Flatpak)."""
+    if IN_FLATPAK and isinstance(cmd, list):
+        return ["flatpak-spawn", "--host"] + cmd
+    return cmd
 
 
 def _creation_flags():
@@ -41,7 +66,7 @@ def launch(cmd, env=None):
     if dry_run():
         return {"ok": True, "dry_run": cmd if isinstance(cmd, str) else " ".join(cmd)}
     try:
-        subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        subprocess.Popen(host(cmd), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                          start_new_session=not IS_WIN, creationflags=_creation_flags(), env=env,
                          close_fds=True)
     except OSError as e:
@@ -56,7 +81,7 @@ def run(cmd, timeout=8, mutate=True):
         log.info("dry run: %s", " ".join(cmd))
         return 0, ""
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, creationflags=_creation_flags())
+        p = subprocess.run(host(cmd), capture_output=True, text=True, timeout=timeout, creationflags=_creation_flags())
         return p.returncode, (p.stdout or "") + (p.stderr if p.returncode else "")
     except (OSError, subprocess.TimeoutExpired) as e:
         return -1, str(e)

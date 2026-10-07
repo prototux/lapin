@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>net.prototux.Lapin</id>
+  <name>Lapin</name>
+  <summary>Desktop client of the Lapin self-hosted voice assistant</summary>
+  <summary xml:lang="fr">Client de bureau de l'assistant vocal auto-hébergé Lapin</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <description>
+    <p>
+      Press a shortcut and a small card opens at the bottom of the screen: it listens, shows what it
+      heard and the answer, and speaks the answer. Speech recognition, the language model and the
+      voices run on your own Lapin server.
+    </p>
+    <p>
+      The assistant can act on this computer: open apps, folders and links, control media and the
+      volume, lock the screen, take screenshots, use the clipboard. Power actions ask for confirmation.
+    </p>
+  </description>
+  <launchable type="desktop-id">net.prototux.Lapin.desktop</launchable>
+  <url type="homepage">https://github.com/prototux/lapin</url>
+  <url type="bugtracker">https://github.com/prototux/lapin/issues</url>
+  <content_rating type="oars-1.1"/>
+</component>

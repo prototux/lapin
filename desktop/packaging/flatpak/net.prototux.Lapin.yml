@@ -1,0 +1,71 @@
+# Flatpak of the desktop app (Linux). The release workflow builds it; locally:
+#   flatpak-builder --user --install --force-clean --install-deps-from=flathub \
+#       build-dir desktop/packaging/flatpak/net.prototux.Lapin.yml
+#
+# The computer actions (open an app or a folder, volume, lock, screenshot,
+# power...) act on the host through `flatpak-spawn --host`, which needs
+# org.freedesktop.Flatpak: this sandbox is not a security boundary.
+id: net.prototux.Lapin
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+base: io.qt.PySide.BaseApp
+base-version: '6.11'
+command: lapin-desktop
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11          # the global shortcut is grabbed on X11
+  - --socket=pulseaudio            # microphone and speaker
+  - --device=dri
+  # tray icon, media players (MPRIS), the host's commands
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --own-name=org.kde.StatusNotifierItem-2-1
+  - --talk-name=org.mpris.MediaPlayer2.*
+  - --talk-name=org.freedesktop.Flatpak
+  # the host's applications, for open_app
+  - --filesystem=host-os:ro
+  - --filesystem=xdg-data/applications:ro
+  - --filesystem=xdg-data/flatpak/exports/share/applications:ro
+  - --filesystem=/var/lib/flatpak/exports/share/applications:ro
+  - --filesystem=/var/lib/snapd/desktop/applications:ro
+  # "Start at login", screenshots
+  - --filesystem=xdg-config/autostart:create
+  - --filesystem=xdg-pictures:create
+cleanup-commands:
+  - /app/cleanup-BaseApp.sh
+modules:
+  - name: portaudio
+    buildsystem: autotools
+    config-opts: [--disable-static, --without-jack, --without-oss]
+    cleanup: [/include, /lib/pkgconfig, '*.la']
+    sources:
+      - type: archive
+        url: https://files.portaudio.com/archives/pa_stable_v190700_20210406.tgz
+        sha256: 47efbf42c77c19a05d22e627d42873e991ec0c1357219c0d74ce6a2948cb2def
+
+  # PySide6 comes from the BaseApp. pynput without evdev: only its X11
+  # backend is used.
+  - name: python-deps
+    buildsystem: simple
+    build-options:
+      build-args: [--share=network]
+    build-commands:
+      - pip3 install --prefix=/app --no-cache-dir --no-deps numpy sounddevice cffi pycparser websockets
+        pynput python-xlib six
+
+  - name: lapin-desktop
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/share/lapin-desktop
+      - cp -r lapin_desktop /app/share/lapin-desktop/
+      - install -Dm755 packaging/flatpak/lapin-desktop.sh /app/bin/lapin-desktop
+      - install -Dm644 packaging/lapin.svg /app/share/icons/hicolor/scalable/apps/net.prototux.Lapin.svg
+      - install -Dm644 packaging/flatpak/net.prototux.Lapin.desktop /app/share/applications/net.prototux.Lapin.desktop
+      - install -Dm644 packaging/flatpak/net.prototux.Lapin.metainfo.xml
+        /app/share/metainfo/net.prototux.Lapin.metainfo.xml
+    sources:
+      - type: dir
+        path: ../..
+        skip: [.venv, dist, packaging/build, tests]

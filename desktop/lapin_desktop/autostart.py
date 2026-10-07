@@ -11,10 +11,15 @@ LABEL = "net.lapin.desktop"
 
 def command():
     """How to start this copy of the app: its launcher when started through
-    one (works from any folder), else the interpreter."""
+    one (works from any folder), the package's own way for the released
+    builds, else the interpreter."""
     launcher = os.environ.get("LAPIN_LAUNCHER")
     if launcher and os.path.exists(launcher):
         return [launcher]
+    if os.environ.get("FLATPAK_ID") and os.path.exists("/.flatpak-info"):
+        return ["flatpak", "run", os.environ["FLATPAK_ID"]]
+    if getattr(sys, "frozen", False):
+        return [sys.executable]         # the Windows and macOS builds (PyInstaller)
     exe = sys.executable
     if sys.platform.startswith("win"):
         w = os.path.join(os.path.dirname(exe), "pythonw.exe")
@@ -33,6 +38,8 @@ def desktop_quote(arg):
 
 def _xdg_path():
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
+    if os.path.exists("/.flatpak-info"):
+        base = os.path.join(os.path.expanduser("~"), ".config")     # the host's, not the sandbox's
     return os.path.join(base, "autostart", NAME + ".desktop")
 
 

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Lapin
+GenericName=Voice assistant
+GenericName[fr]=Assistant vocal
+Comment=Talk to your Lapin voice assistant
+Comment[fr]=Parler à votre assistant vocal Lapin
+Exec=lapin-desktop
+Icon=net.prototux.Lapin
+Terminal=false
+Categories=Utility;
+Keywords=assistant;voice;speech;lapin;assistant vocal;
+StartupNotify=false

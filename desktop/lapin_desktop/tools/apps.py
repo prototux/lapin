@@ -16,7 +16,7 @@ import re
 import shlex
 import time
 
-from .common import IS_MAC, IS_WIN, dry_run, fold, launch, run, which
+from .common import IN_FLATPAK, IS_MAC, IS_WIN, dry_run, fold, launch, run, which
 
 # French/English words people use for common apps, added to the query
 ALIASES = {
@@ -111,8 +111,13 @@ def candidates(apps, query, n=5):
 # ---------------------------------------------------------------- Linux
 def _xdg_app_dirs():
     home = os.path.expanduser("~")
-    data_home = os.environ.get("XDG_DATA_HOME") or os.path.join(home, ".local", "share")
-    dirs = [data_home] + (os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":")
+    if IN_FLATPAK:
+        # the host's, not the sandbox's (the manifest exposes them read-only)
+        data_home = os.path.join(home, ".local", "share")
+        dirs = [data_home, "/run/host/usr/local/share", "/run/host/usr/share"]
+    else:
+        data_home = os.environ.get("XDG_DATA_HOME") or os.path.join(home, ".local", "share")
+        dirs = [data_home] + (os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":")
     dirs += [os.path.join(data_home, "flatpak", "exports", "share"), "/var/lib/flatpak/exports/share",
              "/var/lib/snapd/desktop"]
     out = []
@@ -188,7 +193,8 @@ def exec_command(exec_line):
 
 def launch_linux(app):
     if which("gio"):
-        return launch(["gio", "launch", app.path])
+        path = app.path[len("/run/host"):] if app.path.startswith("/run/host/") else app.path
+        return launch(["gio", "launch", path])
     if which("gtk-launch"):
         return launch(["gtk-launch", app.desktop_id])
     cmd = exec_command(app.exec_line)
