@@ -17,8 +17,23 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        // Release key from the environment (the release workflow's secrets).
+        // Without it the release APK is unsigned: use the debug one locally.
+        val keystore = providers.environmentVariable("LAPIN_KEYSTORE").orNull
+        if (keystore != null) {
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = providers.environmentVariable("LAPIN_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("LAPIN_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("LAPIN_KEY_PASSWORD").orNull
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             optimization {
                 enable = false
             }
