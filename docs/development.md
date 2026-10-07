@@ -143,11 +143,11 @@ do this for you when systemd is available.
 
 | Part | Build | Tests |
 |---|---|---|
-| server | `server/run.sh` | `python tests/fake_device.py "what time is it?"` against a running server (end to end, uses the TTS to synthesize the question) |
-| satellite engine | `make -C satellite/engine` (on the board, or with an ARM cross compiler) | `satellite/engine/tests/simulate.py` (synthetic room, AEC/DOA numbers); `kwstest`/`kwsscan` on recordings; `replay_asr.py` (needs `STT_TOKEN` if your STT wants one) |
+| server | `server/run.sh`; image: `docker build -t lapin-server server` | `python tests/fake_device.py "what time is it?"` against a running server (end to end, uses the TTS to synthesize the question) |
+| satellite engine | `make -C satellite/engine` (on the board, or with an ARM cross compiler); package: `satellite/packaging/build-deb.sh` | `satellite/engine/tests/simulate.py` (synthetic room, AEC/DOA numbers); `kwstest`/`kwsscan` on recordings; `replay_asr.py` (needs `STT_TOKEN` if your STT wants one) |
 | Korvo firmware | `korvo/build.sh` (ESP-IDF v5.5 in `~/esp/esp-idf` or `IDF_PATH`) | `korvo/test/run_tests.sh`: host tests of satcore (KWS, mixer, protocol, log buffer, OTA); with a server running, also on the real wake word recordings |
 | Android | `android/build.sh` (JDK 17–21) | `./gradlew testDebugUnitTest` (JVM tests); `LiveServerTest` with `LAPIN_LIVE_WS=…` against a server |
-| desktop | `desktop/lapin` | `.venv/bin/python -m unittest discover -s tests` (`QT_QPA_PLATFORM=offscreen` headless) |
+| desktop | `desktop/lapin`; packages: `desktop/packaging/build.py` (Windows, macOS), the Flatpak manifest (Linux) | `.venv/bin/python -m unittest discover -s tests` (`QT_QPA_PLATFORM=offscreen` headless) |
 
 ### Testing without hardware
 
@@ -157,6 +157,85 @@ do this for you when systemd is available.
   through the WebSocket.
 - **A fake Korvo:** `korvo/test/hostsat` runs the Korvo's portable core on
   your PC, connected to a real server through `ws_bridge.py`.
+
+## Continuous integration and releases
+
+Two GitHub Actions workflows, in `.github/workflows/`:
+
+- **`ci.yml`**, on every push to `main` and every pull request: starts the
+  server and builds its Docker image; builds `satd` and the ReSpeaker
+  package on Debian 13; builds the Korvo firmware in Espressif's ESP-IDF
+  image and runs its host tests; runs the Android unit tests and builds the
+  debug APK; runs the desktop unit tests. The Korvo images and the debug APK
+  are kept as artifacts of the run for two weeks.
+- **`release.yml`**, on a version tag: builds every package and publishes
+  them in a GitHub release.
+
+| Part | Package | Built by |
+|---|---|---|
+| server | Docker image `ghcr.io/prototux/lapin-server` (amd64, arm64), with the Korvo firmware | `server/Dockerfile` |
+| ReSpeaker satellite | `lapin-satellite_<version>_armhf.deb` | `satellite/packaging/build-deb.sh`, in a Debian 13 armhf container (QEMU) |
+| Korvo | `lapin-korvo-<version>.zip` (`dist/`, `flash.py`, `flash.sh`) and `lapin-korvo-<version>-full.bin` | `korvo/build.sh` |
+| Android | `lapin-android-<version>.apk` | Gradle `assembleRelease` |
+| desktop | Windows installer and `.zip`, macOS `.dmg` | `desktop/packaging/build.py` (PyInstaller, Inno Setup) |
+| desktop | Linux `.flatpak` | `desktop/packaging/flatpak/net.prototux.Lapin.yml` |
+
+### Making a release
+
+```sh
+git tag v1.3.0
+git push origin v1.3.0
+```
+
+Before building, each job writes the tag's version into its part with
+`scripts/set_version.py`: `__version__` of the server, the satellite agent
+and the desktop app, `SATD_VERSION`, the Korvo's `CONFIG_APP_PROJECT_VER`,
+and the Android `versionName` and `versionCode` (`major × 10000 + minor × 100
++ patch`). Run it without an argument to see the current versions. The
+committed versions are not changed: commit the result of
+`scripts/set_version.py 1.3.0` if you want them to follow.
+
+Keep the versions increasing: Android refuses an update with a lower
+versionCode. A tag with a
+suffix (`v1.3.0-rc1`) makes a pre-release and doesn't move the `latest`
+Docker tag.
+
+**Actions → Release → Run workflow** builds everything without publishing
+(the packages stay as artifacts of the run): use it to try a change to the
+packaging.
+
+### One-time setup
+
+- **Android signing key.** An APK can only be updated by one signed with
+  the same key, so releases need a fixed key. Create it once and keep a
+  copy somewhere safe:
+
+  ```sh
+  keytool -genkeypair -keystore lapin-release.jks -alias lapin \
+      -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Lapin"
+  base64 -w0 lapin-release.jks      # the value of ANDROID_KEYSTORE_BASE64
+  ```
+
+  Then add four repository secrets (**Settings → Secrets and variables →
+  Actions**): `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  `ANDROID_KEY_ALIAS` (`lapin`) and `ANDROID_KEY_PASSWORD`. Without them the
+  release gets a debug-signed APK (`lapin-android-<version>-debug.apk`), with
+  a warning. To sign a release build locally, export `LAPIN_KEYSTORE` (the
+  path of the `.jks`), `LAPIN_KEYSTORE_PASSWORD`, `LAPIN_KEY_ALIAS` and
+  `LAPIN_KEY_PASSWORD`, then `./build.sh assembleRelease`.
+- **Docker image visibility.** After the first release, check that the
+  `lapin-server` package is public: **your profile → Packages →
+  lapin-server → Package settings → Change visibility**.
+
+### Not done yet
+
+- The Windows installer and the macOS app are not code-signed, and the macOS
+  app is not notarized: both systems warn on the first start. Signing needs
+  paid certificates, stored as secrets.
+- The macOS build is for Apple silicon only. An Intel build would need a
+  `macos-15-intel` runner in the matrix.
+- The Flatpak is not on Flathub: its Python packages are fetched with pip
+  during the build, which Flathub doesn't allow.
 
 ## Conventions
 

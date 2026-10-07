@@ -20,6 +20,30 @@ It runs two programs:
 
 ## Installing
 
+### From the package
+
+1. Flash the board with Seeed's **Debian** image, connect it to your
+   network and log in (`ssh respeaker@<board-ip>`, default password
+   `respeaker`: change it).
+2. Download `lapin-satellite_<version>_armhf.deb` from the
+   [releases page](https://github.com/prototux/lapin/releases/latest) and
+   install it on the board:
+
+   ```sh
+   sudo apt install ./lapin-satellite_1.3.0_armhf.deb
+   ```
+
+   It installs `satd` and the agent in `/opt/satellite` with their
+   dependencies, and starts the two services.
+3. Open `http://<board-ip>:8080`, set the server URL
+   (`ws://<server>:8765/v1/device`), then follow steps 3 and 4 below.
+
+Install a newer package the same way to update; the settings in
+`/var/lib/satellite` are kept. `sudo apt purge lapin-satellite` removes
+everything, recordings included.
+
+### From the sources
+
 1. Flash the board with Seeed's **Debian** image, connect it to your
    network (Ethernet or Wi-Fi) and check you can `ssh respeaker@<board-ip>`.
    The default password on Seeed's image is `respeaker`. Change it.

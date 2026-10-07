@@ -28,12 +28,41 @@ The server also sends `set` (`volume`), which sets the app's own output volume.
 
 ## Install
 
+Each [release](https://github.com/prototux/lapin/releases/latest) has a
+package for each system. They are not signed by a known publisher, so the
+system warns you the first time.
+
+- **Windows:** `lapin-desktop-<version>-windows-x64-setup.exe` installs it
+  for your user only, with no admin rights (SmartScreen: **More info → Run
+  anyway**). The `.zip` is the same app without an installer.
+- **macOS** (Apple silicon): open `lapin-desktop-<version>-macos-arm64.dmg`
+  and drag Lapin to Applications. The app is not notarized: the first time,
+  macOS refuses to open it. Go to **System Settings → Privacy & Security**,
+  click **Open Anyway** next to the message about Lapin, or run
+  `xattr -dr com.apple.quarantine /Applications/Lapin.app`. It asks for the
+  microphone, then **Accessibility** and **Input Monitoring** for the
+  shortcut, for Lapin itself. After an update, macOS may ask again.
+- **Linux:** the Flatpak, `lapin-desktop-<version>-linux-x86_64.flatpak`:
+
+  ```sh
+  flatpak install --user ./lapin-desktop-1.3.0-linux-x86_64.flatpak
+  flatpak run net.prototux.Lapin
+  ```
+
+  It fetches the KDE runtime from Flathub the first time. The computer
+  actions run their commands on your system with `flatpak-spawn --host`, so
+  the Flatpak has no real sandbox. On Wayland, bind
+  `flatpak run net.prototux.Lapin --activate` to the shortcut (see
+  [Global shortcut](#global-shortcut)).
+
+### From the sources
+
 Put the `desktop` folder wherever you like (and rename it if you want): the
 launchers find their own folder. The first run creates `.venv` inside it and
 installs the dependencies from `requirements.txt`; later runs start at once.
 Moving the folder later is fine, `.venv` included. Python 3.10 or newer.
 
-### Linux
+#### Linux
 
 ```sh
 # PortAudio for sounddevice, and the xcb cursor library Qt needs on X11:
@@ -48,13 +77,13 @@ Optional tools that it uses when they're there: `playerctl`, `wpctl` (PipeWire) 
 `pactl`, `gio` or `gtk-launch`, and `grim` / `gnome-screenshot` / `spectacle` for
 screenshots on Wayland.
 
-### Windows
+#### Windows
 
 Install Python from python.org (tick "Add to PATH"), then double-click
 `lapin.cmd` (or run it from a terminal). Without arguments it starts without a
 console window; with arguments (`lapin.cmd --settings`) it keeps the console.
 
-### macOS
+#### macOS
 
 ```sh
 brew install python portaudio
@@ -156,8 +185,9 @@ The **Start at login** setting creates:
 - Windows: the `Lapin` value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 - macOS: `~/Library/LaunchAgents/net.lapin.desktop.plist`.
 
-Each one runs `<venv python> -m lapin_desktop`. Keep the venv where it is, or toggle
-the setting again after moving it.
+Each one runs the launcher (`lapin`, `lapin.cmd`), or the installed app:
+`Lapin.exe`, `Lapin.app`, `flatpak run net.prototux.Lapin`. After moving the
+folder, toggle the setting again.
 
 ## Command line
 

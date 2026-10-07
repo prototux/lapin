@@ -6,9 +6,17 @@ detected on the board, the request is streamed to the server, the answers and
 the music play on its speaker, and the LED ring shows what it is doing.
 
 `flash.sh` writes the images in `dist/`. That folder is not in the git
-repository: build it once with `./build.sh` (needs ESP-IDF v5.5, see
-[Building from source](#building-from-source) below), or copy a `dist/` folder built elsewhere. Flashing
-itself does not need ESP-IDF.
+repository. Each [release](https://github.com/prototux/lapin/releases/latest)
+has it ready: download `lapin-korvo-<version>.zip`, unzip it and run
+`flash.sh` from there. Or build it with `./build.sh` (needs ESP-IDF v5.5, see
+[Building from source](#building-from-source) below). Flashing itself does
+not need ESP-IDF.
+
+The release also has `lapin-korvo-<version>-full.bin`: the bootloader,
+partition table and firmware in one image, for other tools (the ESP web
+flasher, `esptool.py write_flash 0x0 lapin-korvo-<version>-full.bin`). It
+holds no settings: on first boot the board opens its setup access point
+(see [Changing the settings later](#changing-the-settings-later)).
 
 ## Flashing in 3 steps
 

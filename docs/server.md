@@ -10,7 +10,8 @@ and the wake word recordings.
 
 ## Installing and running
 
-Requirements:
+The simplest way is the Docker image (see [Docker](#docker) below). To
+run it from the sources instead, you need:
 
 - Linux;
 - Python 3.11 or newer;
@@ -27,6 +28,45 @@ DATA=/var/lib/lapin ./run.sh -v   # another data directory, debug logs
 `run.sh` creates `.venv` next to itself on the first run, and again whenever
 `requirements.txt` changes. You can also run the server by hand:
 `python -m assistant --data DIR [-v]`.
+
+### Docker
+
+Each [release](https://github.com/prototux/lapin/releases) publishes an
+image for amd64 and arm64, `ghcr.io/prototux/lapin-server`, tagged with the
+version (`1.3.0`), the minor version (`1.3`) and `latest`. It includes
+ffmpeg and the Korvo firmware of the same release.
+
+```sh
+docker run -d --name lapin --restart unless-stopped \
+    -p 8090:8090 -p 8765:8765 -v lapin-data:/data \
+    -e TZ=Europe/Paris ghcr.io/prototux/lapin-server:latest
+```
+
+Or with Compose:
+
+```yaml
+services:
+  lapin:
+    image: ghcr.io/prototux/lapin-server:latest
+    restart: unless-stopped
+    ports: ["8090:8090", "8765:8765"]
+    volumes: ["lapin-data:/data"]
+    environment:
+      TZ: Europe/Paris
+volumes:
+  lapin-data:
+```
+
+- **Data:** everything is in `/data` (the `lapin-data` volume above). The
+  server runs as user 1000: if you mount a host folder instead of a volume,
+  make it writable by that user.
+- **Services on the Docker host:** `localhost` in the Settings page is the
+  container itself. To reach a speech or language model service on the host,
+  use the host's LAN address, or add `--add-host=host.docker.internal:host-gateway`
+  and use `http://host.docker.internal:<port>/v1`.
+- **Updating:** `docker pull` the new image and recreate the container. The
+  data volume is kept.
+- To build the image yourself: `docker build -t lapin-server server`.
 
 ### Running as a service
 
@@ -230,8 +270,9 @@ person in one click.
 
 ## Firmware updates for the Korvo
 
-After `korvo/build.sh`, the server finds the new image in `korvo/dist/`. To
-update a board over Wi-Fi, use **Devices → (the Korvo) → Update firmware**.
+After `korvo/build.sh`, the server finds the new image in `korvo/dist/`.
+The Docker image carries the firmware of its release. To update a board
+over Wi-Fi, use **Devices → (the Korvo) → Update firmware**.
 The board keeps the new firmware only if it reaches the server again within
 90 s. Otherwise it rolls back to the previous image.
 

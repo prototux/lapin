@@ -1,5 +1,8 @@
 # Lapin
 
+[![CI](https://github.com/prototux/lapin/actions/workflows/ci.yml/badge.svg)](https://github.com/prototux/lapin/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/prototux/lapin?include_prereleases)](https://github.com/prototux/lapin/releases/latest)
+
 A self-hosted voice assistant for the home, in French and English. Lapin
 (French for "rabbit") is a server plus a set of clients: room speakers built on
 a ReSpeaker Core v2 or an ESP32-Korvo, an Android app, and a desktop app for
@@ -94,7 +97,14 @@ include them. The setup it was developed with:
 | Text to speech | `POST /v1/audio/speech` | Qwen3-TTS 1.7B CustomVoice (vLLM-Omni) |
 | Language model | `POST /v1/chat/completions`, with tool calling | Qwen 3.x 27B on vLLM |
 
-Then:
+Then start the server, with Docker:
+
+```sh
+docker run -d --name lapin --restart unless-stopped \
+    -p 8090:8090 -p 8765:8765 -v lapin-data:/data ghcr.io/prototux/lapin-server:latest
+```
+
+or from the sources:
 
 ```sh
 git clone https://github.com/prototux/lapin.git
@@ -106,10 +116,11 @@ cd lapin/server
    enter the URLs, models and tokens of the three services, and **set a web
    password**.
 2. On the **People** page, add the members of the household.
-3. Connect a client:
-   - **Room speaker:** [ReSpeaker](docs/satellite-respeaker.md) (`./deploy.sh respeaker@<ip>`) or [Korvo](korvo/README.md) (`./flash.sh`).
-   - **Phone:** install the [Android app](docs/android.md) and make it the default assistant.
-   - **Computer:** run `desktop/lapin` ([desktop app](desktop/README.md)).
+3. Connect a client, with the packages of the
+   [latest release](https://github.com/prototux/lapin/releases/latest):
+   - **Room speaker:** [ReSpeaker](docs/satellite-respeaker.md) (`sudo apt install ./lapin-satellite_*.deb` on the board) or [Korvo](korvo/README.md) (unzip `lapin-korvo-*.zip`, `./flash.sh`).
+   - **Phone:** install the [Android app](docs/android.md) APK and make it the default assistant.
+   - **Computer:** the [desktop app](desktop/README.md) for Windows, macOS or Linux (Flatpak).
 4. Approve the new device on the **Devices** page.
 5. Ask "quelle heure est-il ?" or "what's the weather tomorrow?"
 
@@ -161,9 +172,10 @@ Lapin is a proof of concept. This is what it lacks, roughly by importance.
   only.
 - **Recognition, the language model and the voices are not included.** You
   need to run your own OpenAI-compatible services, usually on a GPU.
-- **No installer or packages.** There is no Docker image, pip package, APK
-  release, signed desktop build or prebuilt Korvo firmware yet: you build
-  everything from source.
+- **Unsigned packages.** The Windows installer and the macOS app are not
+  code-signed (the macOS app is not notarized), so both systems warn on the
+  first start. The macOS build is for Apple silicon only, and the Flatpak is
+  not on Flathub.
 - **Single process, single SQLite file, no backup or export tool.**
 - **The Korvo can't enroll a wake word.** It reuses the recordings made on a
   ReSpeaker satellite. Without one, only its talk button starts a request.
@@ -180,7 +192,8 @@ Lapin is a proof of concept. This is what it lacks, roughly by importance.
   written but has had little testing.
 - **No multi-household or remote-access mode.** It is built for one LAN.
 - **No automated test suite for the server.** There is only an end-to-end
-  script. The Android, desktop and Korvo code have unit tests.
+  script, and CI checks that it starts. The Android, desktop and Korvo code
+  have unit tests, run by CI.
 
 ### Skills not implemented yet
 

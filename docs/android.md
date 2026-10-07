@@ -15,9 +15,23 @@ in **Android Auto**.
 It is written in Kotlin with Jetpack Compose: package `net.prototux.lapin`,
 minimum Android 8.0 (API 26).
 
-## Building and installing
+## Installing
 
-No APK is published yet; you build it:
+Download `lapin-android-<version>.apk` from the
+[releases page](https://github.com/prototux/lapin/releases/latest) and open
+it on the phone (allow installing apps from your browser or file manager
+when asked), or from a computer:
+
+```sh
+adb install -r lapin-android-1.3.0.apk
+```
+
+Later releases install over it and keep the settings and the pairing. A
+release built without the project's signing key has a name ending in
+`-debug.apk`: it can't update an APK signed with another key, so uninstall
+the old one first (you then pair the phone again).
+
+### Building it yourself
 
 ```sh
 cd android

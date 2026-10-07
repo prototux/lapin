@@ -33,6 +33,15 @@ have to set them up.
 
 ## 2. Start the server
 
+With Docker:
+
+```sh
+docker run -d --name lapin --restart unless-stopped \
+    -p 8090:8090 -p 8765:8765 -v lapin-data:/data ghcr.io/prototux/lapin-server:latest
+```
+
+Or from the sources:
+
 ```sh
 git clone https://github.com/prototux/lapin.git
 cd lapin/server
@@ -46,8 +55,8 @@ server then listens on two ports:
 - **8765:** the device gateway, `ws://<server>:8765/v1/device`, where all
   clients connect.
 
-Settings, the database and the wake word recordings go to `server/data/`.
-To keep them elsewhere, start it as `DATA=/var/lib/lapin ./run.sh`. To run
+Settings, the database and the wake word recordings go to `server/data/`
+(`/data` in the container, kept in the `lapin-data` volume). To keep them elsewhere, start it as `DATA=/var/lib/lapin ./run.sh`. To run
 it as a service, see [server.md](server.md#running-as-a-service).
 
 ## 3. Configure it
@@ -73,10 +82,13 @@ an answer. Click the microphone to try your voice through the browser.
 
 | Client | How | Guide |
 |---|---|---|
-| ReSpeaker Core v2 | `satellite/deploy.sh respeaker@<board-ip> ws://<server>:8765/v1/device` | [satellite-respeaker.md](satellite-respeaker.md) |
-| ESP32-Korvo V1.1 | `korvo/build.sh` once, then `korvo/flash.sh` | [korvo/README.md](../korvo/README.md) |
-| Android phone or TV | build and install the APK, then fill in the setup screen | [android.md](android.md) |
-| Computer | `desktop/lapin`, then fill in the settings window | [desktop/README.md](../desktop/README.md) |
+| ReSpeaker Core v2 | `sudo apt install ./lapin-satellite_*_armhf.deb` on the board, or `satellite/deploy.sh respeaker@<board-ip> ws://<server>:8765/v1/device` | [satellite-respeaker.md](satellite-respeaker.md) |
+| ESP32-Korvo V1.1 | unzip `lapin-korvo-*.zip`, then `./flash.sh` | [korvo/README.md](../korvo/README.md) |
+| Android phone or TV | install `lapin-android-*.apk`, then fill in the setup screen | [android.md](android.md) |
+| Computer | the Windows installer, the macOS disk image or the Linux Flatpak, then fill in the settings window | [desktop/README.md](../desktop/README.md) |
+
+The packages are on the [releases page](https://github.com/prototux/lapin/releases/latest).
+Each guide also explains how to build from the sources.
 
 Every new client shows up on the **Devices** page as *pending*. Click
 **Approve**. Until then, the client says it is waiting for approval.
