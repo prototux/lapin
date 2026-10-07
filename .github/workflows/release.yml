@@ -1,0 +1,309 @@
+# Builds every package and publishes a GitHub release when a version tag is
+# pushed:
+#
+#     git tag v1.3.0 && git push origin v1.3.0
+#
+# - server: Docker image ghcr.io/<owner>/lapin-server (amd64, arm64), with the
+#   Korvo firmware inside for updates over the air;
+# - ReSpeaker satellite: lapin-satellite_<version>_armhf.deb (Debian 13);
+# - Korvo: lapin-korvo-<version>.zip (flasher and images) and
+#   lapin-korvo-<version>-full.bin (one image to write at 0x0);
+# - Android: lapin-android-<version>.apk;
+# - desktop: Windows installer and zip, macOS disk image, Linux Flatpak.
+#
+# Every part is stamped with the tag's version (scripts/set_version.py).
+# Run it by hand (Actions > Release > Run workflow) to build everything without
+# publishing anything: the packages are left as the run's artifacts.
+#
+# The Android APK is signed with the key in these repository secrets:
+# ANDROID_KEYSTORE_BASE64 (base64 of the .jks file), ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. Without them the release gets a
+# debug-signed APK instead (see docs/development.md).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to stamp on the test build
+        default: 0.0.0-dev
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - id: v
+        env:
+          INPUT: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+        run: |
+          v=${INPUT#v}
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$' || { echo "bad version: $v"; exit 1; }
+          {
+            echo "version=$v"
+            case "$v" in *-*) echo "prerelease=true" ;; *) echo "prerelease=false" ;; esac
+            echo "publish=${{ github.event_name == 'push' }}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $v" >> "$GITHUB_STEP_SUMMARY"
+
+  korvo:
+    name: Korvo firmware
+    needs: version
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.5
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/set_version.py "$VERSION"
+      - name: Build
+        working-directory: korvo
+        run: ./build.sh
+      - name: Package the flasher and the images
+        run: |
+          d="lapin-korvo-$VERSION"
+          mkdir -p "out/$d"
+          cp -r korvo/dist korvo/flash.py korvo/flash.sh korvo/README.md LICENSE "out/$d/"
+          cd out
+          python3 -m zipfile -c "$d.zip" "$d"
+          cp "$d/dist/korvo-satellite-full.bin" "$d-full.bin"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-korvo
+          path: |
+            out/*.zip
+            out/*.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korvo-dist
+          path: korvo/dist/
+
+  server-image:
+    name: Server Docker image
+    needs: [version, korvo]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/set_version.py "$VERSION"
+      - uses: actions/download-artifact@v4
+        with:
+          name: korvo-dist
+          path: korvo-dist
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: needs.version.outputs.publish == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/lapin-server
+          tags: |
+            type=raw,value=${{ env.VERSION }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ env.VERSION }},enable=${{ needs.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ needs.version.outputs.prerelease == 'false' }}
+          labels: |
+            org.opencontainers.image.title=Lapin server
+            org.opencontainers.image.description=Self-hosted voice assistant server and admin web UI
+      - uses: docker/build-push-action@v6
+        with:
+          context: server
+          build-contexts: firmware=korvo-dist
+          platforms: linux/amd64,linux/arm64
+          push: ${{ needs.version.outputs.publish == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  satellite:
+    name: ReSpeaker satellite (.deb)
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/set_version.py "$VERSION"
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+      - name: Build in a Debian 13 armhf container
+        run: |
+          docker run --rm --platform linux/arm/v7 -v "$PWD:/src" -w /src debian:trixie sh -c '
+            set -e
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends build-essential pkg-config libasound2-dev libspeexdsp-dev
+            satellite/packaging/build-deb.sh /src/out'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-satellite
+          path: out/*.deb
+
+  android:
+    name: Android app
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      HAS_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/set_version.py "$VERSION"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Signed release APK
+        if: env.HAS_KEY == 'true'
+        working-directory: android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          LAPIN_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LAPIN_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          LAPIN_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          export LAPIN_KEYSTORE="$RUNNER_TEMP/release.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$LAPIN_KEYSTORE"
+          ./gradlew --no-daemon assembleRelease
+          mkdir -p ../out
+          cp app/build/outputs/apk/release/app-release.apk "../out/lapin-android-$VERSION.apk"
+          rm -f "$LAPIN_KEYSTORE"
+      - name: Debug APK (no signing key in the secrets)
+        if: env.HAS_KEY != 'true'
+        working-directory: android
+        run: |
+          echo "::warning::ANDROID_KEYSTORE_BASE64 is not set: publishing a debug-signed APK"
+          ./gradlew --no-daemon assembleDebug
+          mkdir -p ../out
+          cp app/build/outputs/apk/debug/app-debug.apk "../out/lapin-android-$VERSION-debug.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android
+          path: out/*.apk
+
+  desktop:
+    name: Desktop app (${{ matrix.os }})
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python scripts/set_version.py "$VERSION"
+      - name: Inno Setup
+        if: runner.os == 'Windows'
+        run: |
+          ls "/c/Program Files (x86)"/Inno\ Setup*/ISCC.exe 2>/dev/null || choco install innosetup -y --no-progress
+      - run: pip install -r desktop/requirements.txt pyinstaller pillow
+      - run: python desktop/packaging/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-desktop-${{ runner.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.zip
+            desktop/dist/*.dmg
+
+  flatpak:
+    name: Desktop app (Flatpak)
+    needs: version
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.11
+      options: --privileged
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/set_version.py "$VERSION"
+      - name: Build
+        run: |
+          flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak-builder --user --disable-rofiles-fuse --install-deps-from=flathub --repo=repo --force-clean \
+              build desktop/packaging/flatpak/net.prototux.Lapin.yml
+          mkdir -p out
+          flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
+              repo "out/lapin-desktop-$VERSION-linux-x86_64.flatpak" net.prototux.Lapin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-flatpak
+          path: out/*.flatpak
+
+  release:
+    name: Publish the release
+    needs: [version, korvo, server-image, satellite, android, desktop, flatpak]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      IMAGE: ghcr.io/${{ github.repository_owner }}/lapin-server
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: out
+          merge-multiple: true
+      - name: Checksums and notes
+        run: |
+          cd out
+          sha256sum -- * > SHA256SUMS
+          cat SHA256SUMS
+          image=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')
+          apk=$(ls lapin-android-*.apk)
+          deb=$(ls lapin-satellite_*.deb)
+          cat > ../notes.md <<EOF
+          ## Downloads
+
+          | Part | Get it |
+          |---|---|
+          | Server | \`docker pull $image:$VERSION\` ([server guide](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/server.md#docker)) |
+          | ReSpeaker Core v2 | \`$deb\`: \`sudo apt install ./$deb\` on the board |
+          | ESP32-Korvo | \`lapin-korvo-$VERSION.zip\`: unzip, then \`./flash.sh\` (or \`python flash.py\` on Windows). \`lapin-korvo-$VERSION-full.bin\` is one image for other tools, at offset 0x0 |
+          | Android | \`$apk\` |
+          | Windows | \`lapin-desktop-$VERSION-windows-x64-setup.exe\` (or the portable \`.zip\`) |
+          | macOS (Apple silicon) | \`lapin-desktop-$VERSION-macos-arm64.dmg\` (not notarized: see the desktop guide) |
+          | Linux | \`lapin-desktop-$VERSION-linux-x86_64.flatpak\`: \`flatpak install --user ./lapin-desktop-*.flatpak\` |
+
+          The Docker image also carries the Korvo firmware of this release: the server's
+          Devices page can update the Korvo satellites over the air.
+
+          EOF
+      - name: Create the release
+        run: |
+          flags=""
+          [ "${{ needs.version.outputs.prerelease }}" = true ] && flags="--prerelease"
+          gh release create "${{ github.ref_name }}" out/* --title "Lapin $VERSION" \
+              --notes-file notes.md --generate-notes $flags

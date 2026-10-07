@@ -11,6 +11,12 @@ venv/
 #      voice recordings, logs. Never commit it.
 server/data/
 
+# ---- Packaging outputs
+satellite/dist/
+desktop/dist/
+desktop/packaging/build/
+.flatpak-builder/
+
 # ---- ReSpeaker engine (C) build outputs
 *.o
 satellite/engine/satd

@@ -1,0 +1,137 @@
+# Builds and tests every part on each push and pull request. The packages
+# themselves are made by release.yml, on a version tag.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"      # the oldest supported
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install -r server/requirements.txt
+      - run: python -m compileall -q server/assistant
+      - name: Start the server and load the admin UI
+        working-directory: server
+        run: |
+          python -m assistant --data "$RUNNER_TEMP/data" > "$RUNNER_TEMP/server.log" 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8090/ && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/server.log"
+          exit 1
+
+  server-image:
+    name: Server Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: server
+          load: true
+          tags: lapin-server:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Run the image
+        run: |
+          docker run -d --name lapin -p 8090:8090 lapin-server:ci
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8090/ && exit 0
+            sleep 1
+          done
+          docker logs lapin
+          exit 1
+
+  satellite:
+    name: ReSpeaker satellite
+    runs-on: ubuntu-latest
+    container: debian:trixie        # the ReSpeaker's Debian
+    steps:
+      - run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends build-essential pkg-config libasound2-dev \
+              libspeexdsp-dev python3 python3-flask python3-websockets ca-certificates git
+      - uses: actions/checkout@v5
+      - run: make -C satellite/engine -j"$(nproc)"
+      - run: python3 -m compileall -q satellite/agent/satagent
+      # same script as the release, here for this machine's architecture
+      - run: satellite/packaging/build-deb.sh "$RUNNER_TEMP/deb"
+
+  korvo:
+    name: Korvo firmware
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        working-directory: korvo
+        run: ./build.sh
+      - name: Host tests of the portable core
+        working-directory: korvo
+        run: |
+          command -v gcc >/dev/null || { apt-get update -qq && apt-get install -y -qq gcc libc6-dev make; }
+          test/run_tests.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korvo-dist
+          path: korvo/dist/
+          retention-days: 14
+
+  android:
+    name: Android app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests and debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+  desktop:
+    name: Desktop app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: desktop/requirements.txt
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libportaudio2 libxcb-cursor0 libegl1 dbus
+      - run: pip install -r desktop/requirements.txt
+      - name: Unit tests
+        working-directory: desktop
+        env:
+          QT_QPA_PLATFORM: offscreen
+        # a session bus for the MPRIS tests
+        run: dbus-run-session -- python -m unittest discover -s tests -t .
