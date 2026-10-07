@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+if [ "$1" = remove ] && [ -d /run/systemd/system ]; then
+    systemctl stop satellite-agent.service satellite-engine.service || true
+    systemctl disable satellite-agent.service satellite-engine.service >/dev/null 2>&1 || true
+fi
+exit 0

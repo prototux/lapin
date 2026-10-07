@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+USER_NAME=respeaker
+
+if [ "$1" = configure ]; then
+    # Seeed's Debian image has the respeaker user; create it elsewhere
+    if ! id "$USER_NAME" >/dev/null 2>&1; then
+        adduser --system --group --home /var/lib/satellite --no-create-home "$USER_NAME"
+    fi
+    for g in audio spi gpio input adm; do
+        if getent group "$g" >/dev/null; then usermod -aG "$g" "$USER_NAME"; fi
+    done
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload
+        systemctl enable satellite-engine.service satellite-agent.service >/dev/null 2>&1 || true
+        systemctl restart satellite-engine.service || true
+        sleep 1
+        systemctl restart satellite-agent.service || true
+    fi
+    ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    echo "Lapin satellite: set the server and enroll the wake word on http://${ip:-<board-ip>}:8080"
+fi
+exit 0

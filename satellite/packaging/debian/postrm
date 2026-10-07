@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload || true
+fi
+# purge: also the settings, the pairing and the wake word recordings
+if [ "$1" = purge ]; then
+    rm -rf /var/lib/satellite
+fi
+exit 0
