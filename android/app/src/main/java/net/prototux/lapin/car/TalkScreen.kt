@@ -28,7 +28,7 @@ import net.prototux.lapin.core.Phase
 import net.prototux.lapin.core.Surface
 
 /** The car screen: what was heard, the answer, and Talk / Stop (or Yes / No for a confirmation). */
-class TalkScreen(carContext: CarContext) : Screen(carContext), Surface {
+class TalkScreen(carContext: CarContext, private var listenOnStart: Boolean = false) : Screen(carContext), Surface {
     private val assistant get() = LapinApp.assistant
     private var started = false
     override val isVisible: Boolean get() = started
@@ -38,7 +38,11 @@ class TalkScreen(carContext: CarContext) : Screen(carContext), Surface {
             override fun onCreate(owner: LifecycleOwner) {
                 if (carContext.carAppApiLevel >= CarAppApiLevels.LEVEL_5) assistant.enterCar { CarMic(carContext) }
             }
-            override fun onStart(owner: LifecycleOwner) { started = true; assistant.attach(this@TalkScreen) }
+            override fun onStart(owner: LifecycleOwner) {
+                started = true
+                assistant.attach(this@TalkScreen)
+                if (listenOnStart) { listenOnStart = false; talk() }
+            }
             override fun onStop(owner: LifecycleOwner) { started = false; assistant.detach(this@TalkScreen) }
             override fun onDestroy(owner: LifecycleOwner) { assistant.dismissByUser(); assistant.exitCar() }
         })
@@ -61,7 +65,8 @@ class TalkScreen(carContext: CarContext) : Screen(carContext), Surface {
         false
     }
 
-    private fun talk() {
+    /** Starts listening (the Talk action, or the car's voice button). */
+    fun talk() {
         if (carContext.carAppApiLevel < CarAppApiLevels.LEVEL_5) {
             CarToast.makeText(carContext, R.string.car_needs_api, CarToast.LENGTH_LONG).show(); return
         }
