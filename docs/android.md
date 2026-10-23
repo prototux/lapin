@@ -133,10 +133,12 @@ it runs on AARE's car screen (`car/HostTools.kt`):
 | `car_media` | play, pause, next, previous |
 | `car_open` | shows an app, home, the app list or the phone screen |
 | `car_messages` | the latest messages, to read them out |
+| `car_reply` | replies to a conversation (Lapin reads the reply back for confirmation first) |
+| `car_mark_read` | marks a conversation as read |
 | `car_display` | dark, light or the car's day/night colors |
 
-So "take me to the nearest charger", "what's the next turn?" or "read my
-messages" work in the car.
+So "take me to the nearest charger", "what's the next turn?", "read my
+messages" or "reply to Alex that I'm 10 minutes late" work in the car.
 
 ## Troubleshooting
 
