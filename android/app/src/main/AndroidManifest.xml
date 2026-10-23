@@ -25,6 +25,8 @@
 
     <!-- package visibility (Android 11+): apps to open, and intents the tools fire -->
     <queries>
+        <!-- AARE, the open-source Android Auto: its car tools (car/HostTools.kt) -->
+        <provider android:authorities="net.prototux.aare.car" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

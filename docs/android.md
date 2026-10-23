@@ -115,6 +115,29 @@ apps take it.
   sources* in Android Auto's developer settings.
 - **Version:** it needs car app API level 5.
 
+### On AARE
+
+[AARE](https://github.com/prototux/AARE) is an open-source Android Auto. On
+it, Lapin can be the car's voice assistant: choose it in AARE's *Voice
+assistant* settings (or make it the phone's default assistant). The steering
+wheel voice button then opens Lapin as a bar over the car screen, listening
+right away.
+
+AARE also gives Lapin car tools, which it adds to its own device tools while
+it runs on AARE's car screen (`car/HostTools.kt`):
+
+| Tool | Does |
+|---|---|
+| `car_status` | what's on screen, driving or parked, navigation, now playing, the phone's battery and signal |
+| `car_navigate` | navigates to a place in the car's navigation app |
+| `car_media` | play, pause, next, previous |
+| `car_open` | shows an app, home, the app list or the phone screen |
+| `car_messages` | the latest messages, to read them out |
+| `car_display` | dark, light or the car's day/night colors |
+
+So "take me to the nearest charger", "what's the next turn?" or "read my
+messages" work in the car.
+
 ## Troubleshooting
 
 - **"Waiting for approval":** approve the phone on the server's Devices page.

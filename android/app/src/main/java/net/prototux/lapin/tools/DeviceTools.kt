@@ -21,6 +21,7 @@ import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.telephony.SmsManager
 import androidx.core.net.toUri
+import net.prototux.lapin.car.HostTools
 import net.prototux.lapin.core.Assistant
 import net.prototux.lapin.music.MusicPlayer
 import org.json.JSONArray
@@ -58,7 +59,7 @@ class DeviceTools(private val context: Context, private val assistant: Assistant
         "open_url" -> openUrl(a.str("url"))
         "create_calendar_event" -> calendar(a.str("title"), a.str("start_iso"), a.str("end_iso"), a.str("location"))
         "do_not_disturb" -> dnd(a.optBoolean("on", true))
-        else -> err("unknown tool $name")
+        else -> if (HostTools.handles(name)) HostTools.run(context, name, a) else err("unknown tool $name")
     }
 
     // ------------------------------------------------------------------ helpers

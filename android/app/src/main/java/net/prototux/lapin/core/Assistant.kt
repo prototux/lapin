@@ -16,6 +16,7 @@ import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import net.prototux.lapin.car.HostTools
 import net.prototux.lapin.BuildConfig
 import net.prototux.lapin.Prefs
 import net.prototux.lapin.R
@@ -146,15 +147,20 @@ class Assistant(private val app: Context) {
     fun detach(s: Surface) { surfaces.remove(s) }
 
     fun enterCar(source: () -> MicSource) {
+        val was = carMode
         carMode = true
         micFactory = source
         player.speechUsage = AudioAttributes.USAGE_MEDIA
+        // The tools change with the car's (HostTools): say hello again with them.
+        if (!was) connection.restart()
     }
 
     fun exitCar() {
+        val was = carMode
         carMode = false
         micFactory = { AudioRecordSource() }
         player.speechUsage = AudioAttributes.USAGE_ASSISTANT
+        if (was) connection.restart()
     }
 
     // ------------------------------------------------------------------ actions
@@ -375,7 +381,8 @@ class Assistant(private val app: Context) {
     // ------------------------------------------------------------------ server
     private fun hello(): JSONObject {
         val fr = Locale.getDefault().language == "fr"
-        val specs = if (isTv) ToolSpecs.tv() else ToolSpecs.phone(fr)
+        // On AARE's car screen the car host adds its own tools (navigate in the car, music, messages…).
+        val specs = (if (isTv) ToolSpecs.tv() else ToolSpecs.phone(fr)) + if (carMode) HostTools.specs(app) else emptyList()
         return Proto.hello(
             prefs.deviceId, prefs.token, if (isTv) "tv" else "phone", prefs.name, prefs.owner,
             BuildConfig.VERSION_NAME, ToolSpecs.toJson(specs), volumePercent(),
