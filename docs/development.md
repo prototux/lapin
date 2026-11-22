@@ -173,8 +173,14 @@ Two GitHub Actions workflows, in `.github/workflows/`:
 - **`android-release.yml`**, on an Android tag (`android-v1.3.1`): publishes
   the Android app alone, in a release titled "Lapin Android <version>" that
   is never marked latest. Obtainium follows these (see
-  [the Android guide](android.md#with-obtainium)). Both release workflows
-  build the APK with `android-apk.yml`.
+  [the Android guide](android.md#with-obtainium)).
+- **`server-release.yml`**, on a server tag (`server-v1.3.1`): builds the
+  Korvo firmware and pushes the server's Docker image to ghcr, with no
+  GitHub release.
+
+The release workflows share their builds: `android-apk.yml` (the APK),
+`korvo-firmware.yml` (the Korvo firmware) and `server-image.yml` (the
+Docker image, which needs the firmware of the same run).
 
 | Part | Package | Built by |
 |---|---|---|
@@ -200,12 +206,18 @@ and the Android `versionName` and `versionCode` (`major × 10000 + minor × 100
 committed versions are not changed: commit the result of
 `scripts/set_version.py 1.3.0` if you want them to follow.
 
-An Android-only release works the same way with an `android-v` tag:
+An Android-only release works the same way with an `android-v` tag, and a
+server-only one (the Docker image) with a `server-v` tag:
 
 ```sh
 git tag android-v1.3.1
 git push origin android-v1.3.1
+git tag server-v1.3.1
+git push origin server-v1.3.1
 ```
+
+A server release moves the image's `latest` like a release of every part
+does, so keep both kinds of tags above the last `v*` release.
 
 Keep the versions increasing: Android refuses an update with a lower
 versionCode. The two kinds of tags share the Android versions: an Android

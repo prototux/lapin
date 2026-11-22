@@ -1,0 +1,67 @@
+# Builds the server's Docker image (amd64, arm64) stamped with a version, with
+# the Korvo firmware of the same run (the `korvo-dist` artifact of
+# korvo-firmware.yml) inside. When `publish` is true it pushes it to
+# ghcr.io/<owner>/lapin-server, tagged with the version and, unless it's a
+# pre-release, the minor version and `latest`. Called by release.yml and
+# server-release.yml.
+name: Server Docker image
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      prerelease:
+        required: true
+        type: string
+      publish:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    name: Server Docker image
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/set_version.py "$VERSION"
+      - uses: actions/download-artifact@v4
+        with:
+          name: korvo-dist
+          path: korvo-dist
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: inputs.publish == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/lapin-server
+          tags: |
+            type=raw,value=${{ env.VERSION }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ env.VERSION }},enable=${{ inputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ inputs.prerelease == 'false' }}
+          labels: |
+            org.opencontainers.image.title=Lapin server
+            org.opencontainers.image.description=Self-hosted voice assistant server and admin web UI
+      - uses: docker/build-push-action@v6
+        with:
+          context: server
+          build-contexts: firmware=korvo-dist
+          platforms: linux/amd64,linux/arm64
+          push: ${{ inputs.publish == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

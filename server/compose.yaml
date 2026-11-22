@@ -1,0 +1,44 @@
+# The Lapin server with Docker Compose. In this folder:
+#
+#     docker compose up -d          # start (pulls the image the first time)
+#     docker compose pull && docker compose up -d     # update
+#     docker compose logs -f        # follow the log
+#
+# Then open http://<this machine>:8090 for the admin web UI. Settings, the
+# database and the voice recordings stay in the lapin-data volume across
+# updates. See docs/server.md, "Docker".
+
+services:
+  lapin:
+    # The published image (amd64, arm64), with the Korvo firmware of its
+    # release. `latest` follows the releases; pin a version (1.3.0) or a minor
+    # version (1.3) to update only when you choose.
+    image: ghcr.io/prototux/lapin-server:latest
+
+    # Or build it from this checkout instead: comment out `image` above and
+    # uncomment `build`. The firmware context gives the Devices page the Korvo
+    # images to send over the air; build them first (korvo/build.sh), or leave
+    # `additional_contexts` out to build without them.
+    # build:
+    #   context: .
+    #   additional_contexts:
+    #     firmware: ../korvo/dist
+
+    restart: unless-stopped
+    ports:
+      - "8090:8090"     # admin web UI
+      - "8765:8765"     # device WebSocket (phones, satellites, desktop app)
+    volumes:
+      # The server runs as user 1000: a host folder in place of the volume
+      # (./data:/data) must be writable by that user.
+      - lapin-data:/data
+    environment:
+      TZ: Europe/Paris
+    extra_hosts:
+      # Speech or language model services on this machine: use
+      # http://host.docker.internal:<port>/v1 in the Settings page
+      # (localhost there is the container itself).
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  lapin-data:

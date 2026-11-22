@@ -1,0 +1,47 @@
+# Builds the Korvo firmware stamped with a version. Keeps two run artifacts:
+# `release-korvo` (the flasher zip and the one-file image, for a GitHub
+# release) and `korvo-dist` (the images, which the server image carries for
+# updates over the air). Called by release.yml and server-release.yml.
+name: Korvo firmware
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: Korvo firmware
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.5
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/set_version.py "$VERSION"
+      - name: Build
+        working-directory: korvo
+        run: ./build.sh
+      - name: Package the flasher and the images
+        run: |
+          d="lapin-korvo-$VERSION"
+          mkdir -p "out/$d"
+          cp -r korvo/dist korvo/flash.py korvo/flash.sh korvo/README.md LICENSE "out/$d/"
+          cd out
+          python3 -m zipfile -c "$d.zip" "$d"
+          cp "$d/dist/korvo-satellite-full.bin" "$d-full.bin"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-korvo
+          path: |
+            out/*.zip
+            out/*.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korvo-dist
+          path: korvo/dist/

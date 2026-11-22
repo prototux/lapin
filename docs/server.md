@@ -31,30 +31,31 @@ DATA=/var/lib/lapin ./run.sh -v   # another data directory, debug logs
 
 ### Docker
 
-Each [release](https://github.com/prototux/lapin/releases) publishes an
-image for amd64 and arm64, `ghcr.io/prototux/lapin-server`, tagged with the
-version (`1.3.0`), the minor version (`1.3`) and `latest`. It includes
-ffmpeg and the Korvo firmware of the same release.
+The image, `ghcr.io/prototux/lapin-server` (amd64, arm64), is published by
+the releases of every part (`v*` tags) and by the server's own releases
+(`server-v*` tags), tagged with the version (`1.3.0`), the minor version
+(`1.3`) and `latest`. It includes ffmpeg and the Korvo firmware built from
+the same commit.
+
+With Compose, take [`server/compose.yaml`](../server/compose.yaml) (the
+whole repository isn't needed):
+
+```sh
+mkdir lapin && cd lapin
+curl -fsSLO https://raw.githubusercontent.com/prototux/lapin/main/server/compose.yaml
+docker compose up -d
+```
+
+Set `TZ` in it to your time zone first. To build the image from a checkout
+instead, comment out `image:` and uncomment the `build:` section (see the
+comments in the file).
+
+Or with `docker run`:
 
 ```sh
 docker run -d --name lapin --restart unless-stopped \
     -p 8090:8090 -p 8765:8765 -v lapin-data:/data \
     -e TZ=Europe/Paris ghcr.io/prototux/lapin-server:latest
-```
-
-Or with Compose:
-
-```yaml
-services:
-  lapin:
-    image: ghcr.io/prototux/lapin-server:latest
-    restart: unless-stopped
-    ports: ["8090:8090", "8765:8765"]
-    volumes: ["lapin-data:/data"]
-    environment:
-      TZ: Europe/Paris
-volumes:
-  lapin-data:
 ```
 
 - **Data:** everything is in `/data` (the `lapin-data` volume above). The
@@ -64,9 +65,11 @@ volumes:
   container itself. To reach a speech or language model service on the host,
   use the host's LAN address, or add `--add-host=host.docker.internal:host-gateway`
   and use `http://host.docker.internal:<port>/v1`.
-- **Updating:** `docker pull` the new image and recreate the container. The
-  data volume is kept.
-- To build the image yourself: `docker build -t lapin-server server`.
+- **Updating:** `docker compose pull && docker compose up -d` (or
+  `docker pull` the new image and recreate the container). The data volume
+  is kept.
+- To build the image yourself: `docker build -t lapin-server server` (add
+  `--build-context firmware=korvo/dist` for the Korvo images).
 
 ### Running as a service
 
