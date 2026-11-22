@@ -12,7 +12,7 @@ import androidx.car.app.validation.HostValidator
  * the steering-wheel assistant button for itself: there Lapin is opened from
  * the car's app list and has a big "Talk" action. Hosts that hand the button
  * to the chosen assistant (AARE) open it with ACTION_VOICE_COMMAND: there the
- * button is the only control, without Talk and Stop actions.
+ * button listens and the host's close button stops, without Talk and Stop actions.
  */
 class LapinCarAppService : CarAppService() {
     override fun createHostValidator(): HostValidator =
@@ -31,7 +31,7 @@ class LapinCarAppService : CarAppService() {
             return TalkScreen(carContext, voiceButton, listenOnStart = voice).also { screen = it }
         }
 
-        // Each press of the voice button: listen, or stop what Lapin is doing.
+        // Each press of the voice button: listen now.
         override fun onNewIntent(intent: Intent) {
             if (intent.action == Intent.ACTION_VOICE_COMMAND && ::screen.isInitialized) screen.voiceButton()
         }

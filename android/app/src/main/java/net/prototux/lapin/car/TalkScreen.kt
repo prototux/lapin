@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.activity.OnBackPressedCallback
 import androidx.car.app.CarContext
 import androidx.core.net.toUri
 import androidx.car.app.CarToast
@@ -29,8 +30,8 @@ import net.prototux.lapin.core.Surface
 
 /**
  * The car screen: what was heard, the answer, and Talk / Stop (or Yes / No for a confirmation).
- * With [hasVoiceButton] (the host hands Lapin the car's voice button) the button replaces
- * Talk and Stop: see [voiceButton].
+ * With [hasVoiceButton] (the host hands Lapin the car's voice button) there are no Talk and Stop
+ * actions: the button listens ([voiceButton]) and the host's close button stops (back).
  */
 class TalkScreen(
     carContext: CarContext,
@@ -41,7 +42,20 @@ class TalkScreen(
     private var started = false
     override val isVisible: Boolean get() = started
 
+    // Back stops what Lapin is doing; when it's idle, back does what it would do without Lapin.
+    // AARE sends it from its close button and the car's back key while Lapin's bar is open.
+    private val back = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            val s = assistant.ui.value
+            if (s.phase != Phase.IDLE || s.confirm != null) { assistant.dismissByUser(); return }
+            isEnabled = false
+            carContext.onBackPressedDispatcher.onBackPressed()
+            isEnabled = true
+        }
+    }
+
     init {
+        carContext.onBackPressedDispatcher.addCallback(this, back)
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onCreate(owner: LifecycleOwner) {
                 if (carContext.carAppApiLevel >= CarAppApiLevels.LEVEL_5) assistant.enterCar { CarMic(carContext) }
@@ -89,14 +103,14 @@ class TalkScreen(
     }
 
     /**
-     * The car's voice button: listens when Lapin is idle, otherwise stops what it's doing
-     * (listening, thinking, speaking, connecting), like the Stop action.
+     * The car's voice button: always "listen now". It interrupts a reply (thinking, speaking) to
+     * listen again, and leaves a turn that is already listening or connecting alone: unlike Talk,
+     * a second press never ends or cancels it.
      */
     fun voiceButton() {
         when (assistant.ui.value.phase) {
-            Phase.IDLE, Phase.ERROR -> talk()
-            Phase.PENDING -> assistant.connectNow()
-            else -> assistant.dismissByUser()
+            Phase.LISTENING, Phase.CONNECTING -> {}
+            else -> talk()
         }
     }
 
