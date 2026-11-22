@@ -136,7 +136,8 @@ apps take it.
 it, Lapin can be the car's voice assistant: choose it in AARE's *Voice
 assistant* settings (or make it the phone's default assistant). The steering
 wheel voice button then opens Lapin as a bar over the car screen, listening
-right away.
+right away. The button is Lapin's only control there (no Talk or Stop
+actions): pressed again while Lapin listens, thinks or speaks, it stops it.
 
 AARE also gives Lapin car tools, which it adds to its own device tools while
 it runs on AARE's car screen (`car/HostTools.kt`):

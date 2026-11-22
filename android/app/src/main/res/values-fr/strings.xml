@@ -72,6 +72,8 @@
     <string name="car_talk">Parler</string>
     <string name="car_stop">Stop</string>
     <string name="car_ready">Appuie sur Parler et demande.</string>
+    <string name="car_ready_voice">Appuie sur le bouton vocal et demande.</string>
+    <string name="car_speak">Parle maintenant.</string>
     <string name="car_needs_api">Il faut une version plus récente d\'Android Auto (API car app niveau 5).</string>
     <string name="car_needs_mic">Autorise le micro pour Lapin sur le téléphone.</string>
     <string name="car_heard">Toi : %1$s</string>

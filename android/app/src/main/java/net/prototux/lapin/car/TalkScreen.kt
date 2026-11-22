@@ -27,8 +27,16 @@ import net.prototux.lapin.R
 import net.prototux.lapin.core.Phase
 import net.prototux.lapin.core.Surface
 
-/** The car screen: what was heard, the answer, and Talk / Stop (or Yes / No for a confirmation). */
-class TalkScreen(carContext: CarContext, private var listenOnStart: Boolean = false) : Screen(carContext), Surface {
+/**
+ * The car screen: what was heard, the answer, and Talk / Stop (or Yes / No for a confirmation).
+ * With [hasVoiceButton] (the host hands Lapin the car's voice button) the button replaces
+ * Talk and Stop: see [voiceButton].
+ */
+class TalkScreen(
+    carContext: CarContext,
+    private val hasVoiceButton: Boolean = false,
+    private var listenOnStart: Boolean = false,
+) : Screen(carContext), Surface {
     private val assistant get() = LapinApp.assistant
     private var started = false
     override val isVisible: Boolean get() = started
@@ -41,7 +49,7 @@ class TalkScreen(carContext: CarContext, private var listenOnStart: Boolean = fa
             override fun onStart(owner: LifecycleOwner) {
                 started = true
                 assistant.attach(this@TalkScreen)
-                if (listenOnStart) { listenOnStart = false; talk() }
+                if (listenOnStart) { listenOnStart = false; voiceButton() }
             }
             override fun onStop(owner: LifecycleOwner) { started = false; assistant.detach(this@TalkScreen) }
             override fun onDestroy(owner: LifecycleOwner) { assistant.dismissByUser(); assistant.exitCar() }
@@ -80,6 +88,18 @@ class TalkScreen(carContext: CarContext, private var listenOnStart: Boolean = fa
         assistant.orbTap()
     }
 
+    /**
+     * The car's voice button: listens when Lapin is idle, otherwise stops what it's doing
+     * (listening, thinking, speaking, connecting), like the Stop action.
+     */
+    fun voiceButton() {
+        when (assistant.ui.value.phase) {
+            Phase.IDLE, Phase.ERROR -> talk()
+            Phase.PENDING -> assistant.connectNow()
+            else -> assistant.dismissByUser()
+        }
+    }
+
     override fun onGetTemplate(): Template {
         val s = assistant.ui.value
         val c = carContext
@@ -98,7 +118,12 @@ class TalkScreen(carContext: CarContext, private var listenOnStart: Boolean = fa
             if (s.confirm != null) append("\n\n").append(s.confirm.replaceFirstChar { it.uppercase() }).append(" ?")
             if (s.hint.isNotBlank()) append("\n").append(s.hint)
         }.trim().ifEmpty {
-            if (c.carAppApiLevel < CarAppApiLevels.LEVEL_5) c.getString(R.string.car_needs_api) else c.getString(R.string.car_ready)
+            when {
+                c.carAppApiLevel < CarAppApiLevels.LEVEL_5 -> c.getString(R.string.car_needs_api)
+                s.phase == Phase.LISTENING -> c.getString(R.string.car_speak)
+                hasVoiceButton -> c.getString(R.string.car_ready_voice)
+                else -> c.getString(R.string.car_ready)
+            }
         }
         val header = Header.Builder().setTitle(title).setStartHeaderAction(Action.APP_ICON).build()
         val b = MessageTemplate.Builder(body.take(900)).setHeader(header)
@@ -110,7 +135,7 @@ class TalkScreen(carContext: CarContext, private var listenOnStart: Boolean = fa
                 .setOnClickListener { assistant.confirm(true) }.build())
             b.addAction(Action.Builder().setTitle(c.getString(R.string.no))
                 .setOnClickListener { assistant.confirm(false) }.build())
-        } else {
+        } else if (!hasVoiceButton) {
             b.addAction(Action.Builder().setTitle(c.getString(R.string.car_talk)).setBackgroundColor(CarColor.BLUE)
                 .setOnClickListener { talk() }.build())
             if (s.phase == Phase.LISTENING || s.phase == Phase.SPEAKING)
