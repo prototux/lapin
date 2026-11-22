@@ -43,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -121,7 +122,9 @@ private fun SetupScreen(resumeTick: Int) {
     @Suppress("UNUSED_VARIABLE") val refresh = resumeTick + permTick
     fun granted(p: String) = ctx.checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    // A Surface, not a background: it also sets the text color for the background (black by default,
+    // unreadable in dark mode) for every Text that doesn't set its own.
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { Box(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .align(Alignment.TopCenter)
@@ -211,7 +214,7 @@ private fun SetupScreen(resumeTick: Int) {
             }
             Spacer(Modifier.size(12.dp))
         }
-    }
+    } }
 }
 
 @Composable
