@@ -119,7 +119,9 @@ jobs:
 
   desktop:
     name: Desktop app
-    runs-on: ubuntu-latest
+    # Ubuntu 26.04's PortAudio (19.7) fails to initialize without a sound server, and
+    # sounddevice initializes it on import: stay on 24.04 until the tests get a dummy one.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
