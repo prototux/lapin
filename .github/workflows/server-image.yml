@@ -32,20 +32,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: python3 scripts/set_version.py "$VERSION"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: korvo-dist
           path: korvo-dist
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         if: inputs.publish == 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/lapin-server
           tags: |
@@ -55,7 +55,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=Lapin server
             org.opencontainers.image.description=Self-hosted voice assistant server and admin web UI
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: server
           build-contexts: firmware=korvo-dist

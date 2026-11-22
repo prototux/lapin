@@ -45,8 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
         with:
           context: server
           load: true
@@ -92,7 +92,7 @@ jobs:
         run: |
           command -v gcc >/dev/null || { apt-get update -qq && apt-get install -y -qq gcc libc6-dev make; }
           test/run_tests.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: korvo-dist
           path: korvo/dist/
@@ -107,11 +107,11 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Unit tests and debug APK
         working-directory: android
         run: ./gradlew --no-daemon testDebugUnitTest assembleDebug
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk

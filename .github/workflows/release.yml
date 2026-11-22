@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: python3 scripts/set_version.py "$VERSION"
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
         with:
           platforms: arm
       - name: Build in a Debian 13 armhf container
@@ -91,7 +91,7 @@ jobs:
             apt-get update -qq
             apt-get install -y -qq --no-install-recommends build-essential pkg-config libasound2-dev libspeexdsp-dev
             satellite/packaging/build-deb.sh /src/out'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-satellite
           path: out/*.deb
@@ -128,7 +128,7 @@ jobs:
           ls "/c/Program Files (x86)"/Inno\ Setup*/ISCC.exe 2>/dev/null || choco install innosetup -y --no-progress
       - run: pip install -r desktop/requirements.txt pyinstaller pillow
       - run: python desktop/packaging/build.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-desktop-${{ runner.os }}
           path: |
@@ -156,7 +156,7 @@ jobs:
           mkdir -p out
           flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo \
               repo "out/lapin-desktop-$VERSION-linux-x86_64.flatpak" net.prototux.Lapin
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-flatpak
           path: out/*.flatpak
@@ -174,7 +174,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: release-*
           path: out

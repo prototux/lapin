@@ -35,13 +35,13 @@ jobs:
           cd out
           python3 -m zipfile -c "$d.zip" "$d"
           cp "$d/dist/korvo-satellite-full.bin" "$d-full.bin"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-korvo
           path: |
             out/*.zip
             out/*.bin
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: korvo-dist
           path: korvo/dist/
