@@ -158,47 +158,11 @@ jobs:
           path: out/*.deb
 
   android:
-    name: Android app
     needs: version
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.version.outputs.version }}
-      HAS_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
-    steps:
-      - uses: actions/checkout@v5
-      - run: python3 scripts/set_version.py "$VERSION"
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "21"
-      - uses: gradle/actions/setup-gradle@v4
-      - name: Signed release APK
-        if: env.HAS_KEY == 'true'
-        working-directory: android
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          LAPIN_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          LAPIN_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          LAPIN_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          export LAPIN_KEYSTORE="$RUNNER_TEMP/release.jks"
-          echo "$KEYSTORE_BASE64" | base64 -d > "$LAPIN_KEYSTORE"
-          ./gradlew --no-daemon assembleRelease
-          mkdir -p ../out
-          cp app/build/outputs/apk/release/app-release.apk "../out/lapin-android-$VERSION.apk"
-          rm -f "$LAPIN_KEYSTORE"
-      - name: Debug APK (no signing key in the secrets)
-        if: env.HAS_KEY != 'true'
-        working-directory: android
-        run: |
-          echo "::warning::ANDROID_KEYSTORE_BASE64 is not set: publishing a debug-signed APK"
-          ./gradlew --no-daemon assembleDebug
-          mkdir -p ../out
-          cp app/build/outputs/apk/debug/app-debug.apk "../out/lapin-android-$VERSION-debug.apk"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-android
-          path: out/*.apk
+    uses: ./.github/workflows/android-apk.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
 
   desktop:
     name: Desktop app (${{ matrix.os }})

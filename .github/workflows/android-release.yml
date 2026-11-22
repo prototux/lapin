@@ -1,0 +1,89 @@
+# Publishes the Android app on its own, without the other parts, when an
+# Android tag is pushed:
+#
+#     git tag android-v1.3.1 && git push origin android-v1.3.1
+#
+# The release is titled "Lapin Android <version>" and holds only
+# lapin-android-<version>.apk: Obtainium follows these releases by their title
+# (see docs/android.md). It is never marked as the repository's latest release,
+# which stays the release of every part (release.yml, v* tags).
+#
+# Run it by hand (Actions > Android release > Run workflow) to build the APK
+# without publishing it.
+name: Android release
+
+on:
+  push:
+    tags: ["android-v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to stamp on the test build
+        default: 0.0.0-dev
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - id: v
+        env:
+          INPUT: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+        run: |
+          v=${INPUT#android-}
+          v=${v#v}
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$' || { echo "bad version: $v"; exit 1; }
+          {
+            echo "version=$v"
+            case "$v" in *-*) echo "prerelease=true" ;; *) echo "prerelease=false" ;; esac
+            echo "publish=${{ github.event_name == 'push' }}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $v" >> "$GITHUB_STEP_SUMMARY"
+
+  android:
+    needs: version
+    uses: ./.github/workflows/android-apk.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  release:
+    name: Publish the release
+    needs: [version, android]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-android
+          path: out
+      - name: Checksums and notes
+        run: |
+          cd out
+          sha256sum -- * > SHA256SUMS
+          cat SHA256SUMS
+          apk=$(ls lapin-android-*.apk)
+          cat > ../notes.md <<EOF
+          The Android app only: \`$apk\`. Install it from the phone, or follow these
+          releases with Obtainium ([Android guide](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/android.md#installing)).
+
+          EOF
+      - name: Create the release
+        run: |
+          flags="--latest=false"
+          [ "${{ needs.version.outputs.prerelease }}" = true ] && flags="$flags --prerelease"
+          gh release create "${{ github.ref_name }}" out/* --title "Lapin Android $VERSION" \
+              --notes-file notes.md $flags

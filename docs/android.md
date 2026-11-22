@@ -31,6 +31,21 @@ release built without the project's signing key has a name ending in
 `-debug.apk`: it can't update an APK signed with another key, so uninstall
 the old one first (you then pair the phone again).
 
+### With Obtainium
+
+[Obtainium](https://github.com/ImranR98/Obtainium) installs the app from
+GitHub and keeps it up to date. The app also has releases of its own,
+titled "Lapin Android <version>" (`android-v*` tags), which come out more
+often than the releases of every part. In Obtainium, **Add App**:
+
+- **App source URL:** `https://github.com/prototux/lapin`;
+- **Filter release titles by regular expression:** `^Lapin Android`, to
+  follow the app's own releases. Left empty, Obtainium also takes the APK
+  of the releases of every part.
+
+An APK you built yourself or installed from a `-debug.apk` is signed with
+another key: uninstall it before the first install from Obtainium.
+
 ### Building it yourself
 
 ```sh

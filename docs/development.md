@@ -168,8 +168,13 @@ Two GitHub Actions workflows, in `.github/workflows/`:
   image and runs its host tests; runs the Android unit tests and builds the
   debug APK; runs the desktop unit tests. The Korvo images and the debug APK
   are kept as artifacts of the run for two weeks.
-- **`release.yml`**, on a version tag: builds every package and publishes
-  them in a GitHub release.
+- **`release.yml`**, on a version tag (`v1.3.0`): builds every package and
+  publishes them in a GitHub release.
+- **`android-release.yml`**, on an Android tag (`android-v1.3.1`): publishes
+  the Android app alone, in a release titled "Lapin Android <version>" that
+  is never marked latest. Obtainium follows these (see
+  [the Android guide](android.md#with-obtainium)). Both release workflows
+  build the APK with `android-apk.yml`.
 
 | Part | Package | Built by |
 |---|---|---|
@@ -195,8 +200,17 @@ and the Android `versionName` and `versionCode` (`major × 10000 + minor × 100
 committed versions are not changed: commit the result of
 `scripts/set_version.py 1.3.0` if you want them to follow.
 
+An Android-only release works the same way with an `android-v` tag:
+
+```sh
+git tag android-v1.3.1
+git push origin android-v1.3.1
+```
+
 Keep the versions increasing: Android refuses an update with a lower
-versionCode. A tag with a
+versionCode. The two kinds of tags share the Android versions: an Android
+release comes after the last release of every part (`android-v1.3.1` after
+`v1.3.0`), and the next release of every part after it (`v1.4.0`). A tag with a
 suffix (`v1.3.0-rc1`) makes a pre-release and doesn't move the `latest`
 Docker tag.
 
