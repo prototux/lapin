@@ -42,6 +42,7 @@ class Vad:
     the room's noise to speech levels)."""
 
     FRAME = 320
+    LEARN_MS = 300      # near field: how much of the user's speech sets their level
 
     def __init__(self, margin_db=9.0, hangover=8, mode=3, near_field=False, near_drop_db=12.0):
         try:
@@ -56,6 +57,7 @@ class Vad:
         self.near_drop = near_drop_db
         self.user_db = None
         self.user_ms = 0
+        self.learn = []
         self.margin = margin_db
         self.hangover = hangover
         self.hang = 0
@@ -89,13 +91,21 @@ class Vad:
                 except Exception:
                     pass
             if loud and self.near_field:
-                # the user's level: a peak of speech frames, slowly decaying
-                # (1 dB/s), so a quieter end of sentence still counts
-                if self.user_db is None or db > self.user_db:
-                    self.user_db = db
-                if self.user_ms >= 300 and db < self.user_db - self.near_drop:
+                if self.user_ms < self.LEARN_MS:
+                    # the user's level: the median of their first speech frames, not the
+                    # loudest one: a short loud sound at the start (Lapin's follow-up chime,
+                    # from the phone's speaker next to its mic) set it far above the voice,
+                    # and the rest of the answer then counted as background
+                    self.learn.append(db)
+                    self.user_ms += 20
+                    if self.user_ms >= self.LEARN_MS:
+                        self.user_db = float(np.median(self.learn))
+                elif db < self.user_db - self.near_drop:
                     loud = False                # someone farther away
                 else:
+                    # then a peak of speech frames, slowly decaying (1 dB/s), so a
+                    # quieter end of sentence still counts
+                    self.user_db = max(self.user_db, db)
                     self.user_ms += 20
             if self.user_db is not None:
                 self.user_db -= 0.02

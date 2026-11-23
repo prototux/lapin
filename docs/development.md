@@ -143,7 +143,7 @@ do this for you when systemd is available.
 
 | Part | Build | Tests |
 |---|---|---|
-| server | `server/run.sh`; image: `docker build -t lapin-server server` | `python tests/fake_device.py "what time is it?"` against a running server (end to end, uses the TTS to synthesize the question) |
+| server | `server/run.sh`; image: `docker build -t lapin-server server` | `python -m unittest discover -s tests -t .` (unit tests, in CI); `python tests/fake_device.py "what time is it?"` against a running server (end to end, uses the TTS to synthesize the question) |
 | satellite engine | `make -C satellite/engine` (on the board, or with an ARM cross compiler); package: `satellite/packaging/build-deb.sh` | `satellite/engine/tests/simulate.py` (synthetic room, AEC/DOA numbers); `kwstest`/`kwsscan` on recordings; `replay_asr.py` (needs `STT_TOKEN` if your STT wants one) |
 | Korvo firmware | `korvo/build.sh` (ESP-IDF v5.5 in `~/esp/esp-idf` or `IDF_PATH`) | `korvo/test/run_tests.sh`: host tests of satcore (KWS, mixer, protocol, log buffer, OTA); with a server running, also on the real wake word recordings |
 | Android | `android/build.sh` (JDK 17–21) | `./gradlew testDebugUnitTest` (JVM tests); `LiveServerTest` with `LAPIN_LIVE_WS=…` against a server |

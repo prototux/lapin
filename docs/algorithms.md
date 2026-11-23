@@ -324,7 +324,7 @@ r is difflib's SequenceMatcher ratio on the strings without spaces. φ is a crud
 The server runs its own voice detector on the stream, on 20 ms frames:
 
 - **Speech test:** the frame must be more than 9 dB above an adaptive noise floor (fast down, slow up, faster during the first second) and above −58 dBFS, AND the WebRTC VAD (mode 3) must call it speech. The second test rejects loud non-speech noise.
-- **Phones and computers (near field):** once 300 ms of the user's speech is heard, voices more than 12 dB below their level (a decaying peak, −1 dB/s) count as background. That covers TV, announcements and colleagues.
+- **Phones and computers (near field):** the user's level is the median of their first 300 ms of speech (not the loudest frame: Lapin's follow-up chime, from the phone's speaker next to its mic, would set it far above the voice), then a decaying peak (−1 dB/s). Voices more than 12 dB below it count as background. That covers TV, announcements and colleagues.
 - **Hangover:** 160 ms.
 
 The turn ends:
