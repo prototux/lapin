@@ -41,6 +41,20 @@ def looks_complete(text):
     return bool(words) and words[-1] not in INCOMPLETE
 
 
+def stt_language(settings, source, conversation):
+    """The language speech-to-text should expect, or None for it to tell from the audio.
+
+    A follow-up is the answer to the assistant's question, often a word or two ("oui", "non"):
+    too short for speech-to-text to recognize the language, it heard a French "oui" as an
+    English "Yeah.". It gets the language of the conversation it answers."""
+    fixed = settings["assistant"].get("language", "auto")
+    if fixed in ("en", "fr"):
+        return fixed
+    if source == "followup":
+        return conversation.lang
+    return None
+
+
 class VoiceTurn:
     def __init__(self, mgr, session, wake):
         self.mgr = mgr
@@ -54,6 +68,8 @@ class VoiceTurn:
         self.audio = bytearray()
         self.cond = threading.Condition()
         self.vad = Vad(near_field=session.kind in ("phone", "desktop"))
+        self.stt_lang = stt_language(self.app.settings, self.source,
+                                     self.app.conversations.get("device:%s" % session.id))
         self.eos = None
         self.audio_ended = False
         self.cancel = threading.Event()
@@ -61,6 +77,8 @@ class VoiceTurn:
         self.trace = Trace("voice")
         self.trace.event("wake", **{k: wake.get(k) for k in ("source", "keyword", "score", "doa", "snr_db",
                                                               "preroll_ms", "barge_in", "playing")})
+        if self.stt_lang:
+            self.trace.event("stt_language", lang=self.stt_lang)
         self.trace.mark("wake")
         self.verify = None
         self.out = None
@@ -130,7 +148,7 @@ class VoiceTurn:
     def _stt(self, pcm):
         if self.app.settings["enhance"].get("denoise"):
             pcm = denoise(pcm)
-        return self.app.stt.transcribe(pcm, language=None)
+        return self.app.stt.transcribe(pcm, language=self.stt_lang)
 
     def _run(self):
         app, tr = self.app, self.trace
@@ -359,6 +377,7 @@ NOT_UNDERSTOOD = re.compile(
     r"pas (sûre?|certaine?) d'avoir (bien )?compris|(peux|pourrais|pouvez|pourriez)[- ](tu|vous) répéter|"
     r"tu peux répéter|répéter (s'il|stp|svp|ta question|votre question|ce que)|didn't (quite )?(catch|understand|get) (that|it|you)|"
     r"not sure (what|i understand)|don't understand|(could|can) you (say|repeat)|say (that|it) again)", re.I)
+
 
 
 class TurnManager:
